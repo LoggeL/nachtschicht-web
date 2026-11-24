@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "style": "Mediterranean Night Noir",
+  "generatedWith": "codex-cli imagegen (gpt-image-2)",
+  "assets": {
+    "title_salou_night": {
+      "url": "/assets/images/title_salou_night.webp",
+      "category": "hero",
+      "width": 1440,
+      "height": 810,
+      "format": "webp",
+      "bytes": 181118,
+      "tileable": false,
+      "usage": "Title screen widescreen hero backdrop (16:9)"
+    },
+    "portrait_mara": {
+      "url": "/assets/images/portrait_mara.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 44684,
+      "tileable": false,
+      "usage": "Character portrait for Mara Voss (player protagonist, ex-security engineer)"
+    },
+    "portrait_jupp": {
+      "url": "/assets/images/portrait_jupp.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 55126,
+      "tileable": false,
+      "usage": "Character portrait for Jupp Kowalke (68, old-school German safecracker mentor)"
+    },
+    "portrait_jule": {
+      "url": "/assets/images/portrait_jule.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 52834,
+      "tileable": false,
+      "usage": "Character portrait for Jule (young electronics & alarm specialist)"
+    },
+    "portrait_toni": {
+      "url": "/assets/images/portrait_toni.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 65234,
+      "tileable": false,
+      "usage": "Character portrait for Toni (charismatic Catalan getaway driver)"
+    },
+    "portrait_rico": {
+      "url": "/assets/images/portrait_rico.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 50944,
+      "tileable": false,
+      "usage": "Character portrait for Rico (agile climber & muscle)"
+    },
+    "portrait_ferrer": {
+      "url": "/assets/images/portrait_ferrer.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 45540,
+      "tileable": false,
+      "usage": "Character portrait for Inspectora Núria Ferrer (Catalan police detective, Die Akte antagonist)"
+    },
+    "portrait_lassen": {
+      "url": "/assets/images/portrait_lassen.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 36998,
+      "tileable": false,
+      "usage": "Character portrait for Henrik Lassen (cold corporate Securion executive)"
+    },
+    "story_bar_salou": {
+      "url": "/assets/images/story_bar_salou.webp",
+      "category": "story",
+      "width": 1280,
+      "height": 720,
+      "format": "webp",
+      "bytes": 193660,
+      "tileable": false,
+      "usage": "Act 1 story briefing panel: dim Salou bar with blueprints on wax tracing paper"
+    },
+    "story_dresden_vault": {
+      "url": "/assets/images/story_dresden_vault.webp",
+      "category": "story",
+      "width": 1280,
+      "height": 720,
+      "format": "webp",
+      "bytes": 262532,
+      "tileable": false,
+      "usage": "Act 3 finale story panel: baroque Dresden night silhouette and illuminated fictional royal treasure vault"
+    },
+    "salou_stucco": {
+      "url": "/assets/textures/salou_stucco.webp",
+      "category": "texture",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 35372,
+      "tileable": true,
+      "usage": "Seamless tileable 3D surface texture for Salou Mediterranean stucco building walls"
+    },
+    "wet_asphalt": {
+      "url": "/assets/textures/wet_asphalt.webp",
+      "category": "texture",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 62620,
+      "tileable": true,
+      "usage": "Seamless tileable 3D surface texture for Salou wet night asphalt roads"
+    },
+    "stone_plaza": {
+      "url": "/assets/textures/stone_plaza.webp",
+      "category": "texture",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 48574,
+      "tileable": true,
+      "usage": "Seamless tileable 3D surface texture for Mediterranean promenade and plaza stone paving"
+    },
+    "blueprint_paper": {
+      "url": "/assets/textures/blueprint_paper.webp",
+      "category": "texture",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 7714,
+      "tileable": true,
+      "usage": "Seamless tileable UI/Reißbrett texture for architectural night blueprint drafting surface"
+    }
+  },
+  "images": {
+    "title_salou_night": "/assets/images/title_salou_night.webp",
+    "portrait_mara": "/assets/images/portrait_mara.webp",
+    "portrait_jupp": "/assets/images/portrait_jupp.webp",
+    "portrait_jule": "/assets/images/portrait_jule.webp",
+    "portrait_toni": "/assets/images/portrait_toni.webp",
+    "portrait_rico": "/assets/images/portrait_rico.webp",
+    "portrait_ferrer": "/assets/images/portrait_ferrer.webp",
+    "portrait_lassen": "/assets/images/portrait_lassen.webp",
+    "story_bar_salou": "/assets/images/story_bar_salou.webp",
+    "story_dresden_vault": "/assets/images/story_dresden_vault.webp"
+  },
+  "textures": {
+    "salou_stucco": "/assets/textures/salou_stucco.webp",
+    "wet_asphalt": "/assets/textures/wet_asphalt.webp",
+    "stone_plaza": "/assets/textures/stone_plaza.webp",
+    "blueprint_paper": "/assets/textures/blueprint_paper.webp"
+  }
+}

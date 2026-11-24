@@ -1,0 +1,861 @@
+import { useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  Compass,
+  GitBranch,
+  Layers,
+  Link2,
+  Play,
+  Plus,
+  ShieldAlert,
+  Sparkles,
+  Trash2,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
+import { useGameStore } from '../../state/store';
+import { TARGETS, TOOLS } from '../../sim/data';
+import { scanRehearsalConflicts } from '../../sim/simulator';
+import {
+  ACTION_TYPE_LABELS,
+  CrewId,
+  FLOOR_LABELS,
+  PlanBFallbackAction,
+  PlanBTrigger,
+  SKILL_LABELS,
+} from '../../sim/types';
+import {
+  NODE_KIND_LABELS,
+  PLAN_B_ACTION_LABELS,
+  PLAN_B_TRIGGER_LABELS,
+  formatEur,
+  formatShortSec,
+} from '../assets';
+import { BlueprintFloorplan } from '../components/BlueprintFloorplan';
+import { TimelineDAW } from '../components/TimelineDAW';
+import { CharacterAvatar } from '../components/CharacterAvatar';
+
+type InspectorTab = 'inspect' | 'sync' | 'planb';
+
+export function ReissbrettScreen() {
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('inspect');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [syncSourceBlockId, setSyncSourceBlockId] = useState<string | null>(null);
+  const [syncFromDropdown, setSyncFromDropdown] = useState<string>('');
+  const [syncToDropdown, setSyncToDropdown] = useState<string>('');
+  const [syncFeedback, setSyncFeedback] = useState<{ ok: boolean; msg: string } | null>(
+    null
+  );
+
+  const activeTargetId = useGameStore((s) => s.activeTargetId);
+  const bankrollEur = useGameStore((s) => s.bankrollEur);
+  const crew = useGameStore((s) => s.crew);
+  const intelByTarget = useGameStore((s) => s.intelByTarget);
+  const plansByTarget = useGameStore((s) => s.plansByTarget);
+  const selectedFloor = useGameStore((s) => s.selectedFloor);
+  const selectedCrewId = useGameStore((s) => s.selectedCrewId);
+  const rehearsalTimeSec = useGameStore((s) => s.rehearsalTimeSec);
+  const rehearsalPlaying = useGameStore((s) => s.rehearsalPlaying);
+  const rehearsalSpeed = useGameStore((s) => s.rehearsalSpeed);
+  const audioMuted = useGameStore((s) => s.audioMuted);
+
+  const getResolvedPlan = useGameStore((s) => s.getResolvedPlan);
+  const getRehearsalSnapshot = useGameStore((s) => s.getRehearsalSnapshot);
+  const setPhase = useGameStore((s) => s.setPhase);
+  const setSelectedFloor = useGameStore((s) => s.setSelectedFloor);
+  const setSelectedCrewId = useGameStore((s) => s.setSelectedCrewId);
+  const loadStarterPlan = useGameStore((s) => s.loadStarterPlan);
+  const addPlanBlock = useGameStore((s) => s.addPlanBlock);
+  const updatePlanBlock = useGameStore((s) => s.updatePlanBlock);
+  const removePlanBlock = useGameStore((s) => s.removePlanBlock);
+  const addSyncBarrier = useGameStore((s) => s.addSyncBarrier);
+  const removeSyncBarrier = useGameStore((s) => s.removeSyncBarrier);
+  const setPlanBBranch = useGameStore((s) => s.setPlanBBranch);
+  const removePlanBBranch = useGameStore((s) => s.removePlanBBranch);
+  const buyTargetBlueprints = useGameStore((s) => s.buyTargetBlueprints);
+  const setRehearsalTime = useGameStore((s) => s.setRehearsalTime);
+  const setRehearsalPlaying = useGameStore((s) => s.setRehearsalPlaying);
+  const launchHeist = useGameStore((s) => s.launchHeist);
+  const toggleAudioMuted = useGameStore((s) => s.toggleAudioMuted);
+
+  const target = TARGETS[activeTargetId];
+  const intel = intelByTarget[activeTargetId];
+  const rawPlan = plansByTarget[activeTargetId];
+
+  // Keep selectedFloor & selectedCrewId valid when switching targets or crew
+  useEffect(() => {
+    if (!target.floors.includes(selectedFloor)) {
+      setSelectedFloor(target.floors.includes(0) ? 0 : target.floors[0]);
+    }
+    if (!rawPlan.assignedCrewIds.includes(selectedCrewId)) {
+      setSelectedCrewId(rawPlan.assignedCrewIds[0] ?? 'mara');
+    }
+  }, [
+    target.floors,
+    selectedFloor,
+    setSelectedFloor,
+    rawPlan.assignedCrewIds,
+    selectedCrewId,
+    setSelectedCrewId,
+  ]);
+
+  // Derived deterministic plan & rehearsal snapshot
+  const resolvedPlan = useMemo(
+    () => getResolvedPlan(activeTargetId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeTargetId, rawPlan, crew, intel]
+  );
+
+  const snapshot = useMemo(
+    () => getRehearsalSnapshot(rehearsalTimeSec),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resolvedPlan, intel, rehearsalTimeSec]
+  );
+
+  const allConflicts = useMemo(
+    () =>
+      scanRehearsalConflicts({
+        resolvedPlan,
+        target,
+        intel,
+        stepSec: 1.0,
+      }),
+    [resolvedPlan, target, intel]
+  );
+
+  // Smooth requestAnimationFrame driver for Ghost Rehearsal playback
+  useEffect(() => {
+    if (!rehearsalPlaying) return;
+    let rafId = 0;
+    let lastTs = performance.now();
+
+    const step = (now: number) => {
+      const dtSec = Math.min(0.1, (now - lastTs) / 1000);
+      lastTs = now;
+      const state = useGameStore.getState();
+      if (!state.rehearsalPlaying) return;
+      const maxDur = Math.max(10, state.getResolvedPlan().totalDurationSec);
+      const nextTime = state.rehearsalTimeSec + dtSec * state.rehearsalSpeed;
+      if (nextTime >= maxDur) {
+        state.setRehearsalTime(maxDur);
+        state.setRehearsalPlaying(false);
+        return;
+      }
+      state.setRehearsalTime(Math.round(nextTime * 100) / 100);
+      rafId = requestAnimationFrame(step);
+    };
+
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [rehearsalPlaying]);
+
+  const selectedNode = selectedNodeId
+    ? target.nodes.find((n) => n.id === selectedNodeId) ?? null
+    : null;
+  const selectedBlock = selectedBlockId
+    ? resolvedPlan.blocksById[selectedBlockId] ?? null
+    : null;
+
+  const blueprintCost = 2500 * target.difficulty;
+
+  const handleQuickAddNode = (nodeId: string) => {
+    const added = addPlanBlock({ crewId: selectedCrewId, nodeId });
+    if (added) {
+      setSelectedBlockId(added.id);
+      setSelectedNodeId(nodeId);
+      setInspectorTab('inspect');
+    }
+  };
+
+  const handleCompleteSyncLink = (targetBlockId: string) => {
+    if (!syncSourceBlockId) return;
+    const res = addSyncBarrier(syncSourceBlockId, targetBlockId);
+    setSyncSourceBlockId(null);
+    if (res.ok) {
+      setSyncFeedback({ ok: true, msg: 'Synchronpunkt erfolgreich verknüpft!' });
+    } else {
+      setSyncFeedback({ ok: false, msg: res.error ?? 'Verknüpfung fehlgeschlagen.' });
+    }
+    setTimeout(() => setSyncFeedback(null), 3500);
+  };
+
+  const handleDropdownSyncCreate = () => {
+    if (!syncFromDropdown || !syncToDropdown) return;
+    const res = addSyncBarrier(syncFromDropdown, syncToDropdown);
+    if (res.ok) {
+      setSyncFeedback({ ok: true, msg: 'Synchronpunkt gesetzt!' });
+      setSyncFromDropdown('');
+      setSyncToDropdown('');
+    } else {
+      setSyncFeedback({ ok: false, msg: res.error ?? 'Fehler beim Verknüpfen.' });
+    }
+    setTimeout(() => setSyncFeedback(null), 3500);
+  };
+
+  const handleUpdatePlanB = (
+    crewId: CrewId,
+    trigger: PlanBTrigger,
+    action: PlanBFallbackAction
+  ) => {
+    setPlanBBranch({
+      id: `pb_${crewId}_${trigger}`,
+      crewId,
+      trigger,
+      action,
+      label: `${PLAN_B_TRIGGER_LABELS[trigger]} → ${PLAN_B_ACTION_LABELS[action]}`,
+    });
+  };
+
+  const errorCount = resolvedPlan.issues.filter((i) => i.severity === 'error').length;
+  const warningCount = resolvedPlan.issues.filter((i) => i.severity === 'warning').length;
+
+  return (
+    <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#060b16] text-slate-100">
+      {/* Slim Top Reißbrett Header */}
+      <header className="h-13 shrink-0 px-4 border-b border-slate-800 bg-[#070e1d] flex items-center justify-between gap-3">
+        {/* Left: Back & Target Title */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setPhase('safehouse')}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs text-slate-200 cursor-pointer shrink-0"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Versteck</span>
+          </button>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-mono-tech text-[10px] uppercase tracking-widest text-amber-400 whitespace-nowrap shrink-0">
+                DAS REISSBRETT
+              </span>
+              <span className="text-slate-600 shrink-0">·</span>
+              <h1 className="font-display font-bold text-sm text-white truncate">
+                {target.name}
+              </h1>
+              <span className="font-mono-tech text-[10px] px-2 py-0.5 rounded bg-sky-500/15 border border-sky-400/35 text-sky-300 whitespace-nowrap shrink-0">
+                Intel {intel.completionPercent}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Floor Switcher Pills */}
+        <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
+          <Layers className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-0.5" />
+          {target.floors.map((fl) => {
+            const active = fl === selectedFloor;
+            const ghostsOnFloor = snapshot.crew.filter((g) => g.floor === fl);
+            return (
+              <button
+                key={fl}
+                type="button"
+                onClick={() => setSelectedFloor(fl)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono-tech font-semibold transition-colors cursor-pointer ${
+                  active
+                    ? 'bg-sky-400 text-slate-950'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <span>{FLOOR_LABELS[fl]}</span>
+                {ghostsOnFloor.length > 0 && (
+                  <span className="flex items-center gap-0.5">
+                    {ghostsOnFloor.map((g) => (
+                      <span
+                        key={g.crewId}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{
+                          backgroundColor: active
+                            ? '#020617'
+                            : crew[g.crewId]?.accentColor ?? '#38bdf8',
+                        }}
+                      />
+                    ))}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right: Starter Plan + Scouting + LAUNCH HEIST CTA */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              loadStarterPlan(activeTargetId);
+              setSelectedBlockId(null);
+              setSyncFeedback({ ok: true, msg: 'Jupps Starter-Plan geladen!' });
+              setTimeout(() => setSyncFeedback(null), 2500);
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-400/40 text-amber-200 text-xs font-semibold cursor-pointer"
+            title="Lädt Jupps empfohlenen Mehrspur-Plan mit Synchronpunkten"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden lg:inline">Starter-Plan laden</span>
+            <span className="lg:hidden">Starter</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPhase('scouting')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/50 text-sky-100 text-xs font-semibold cursor-pointer"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Auskundschaften</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={!resolvedPlan.valid}
+            onClick={() => launchHeist(activeTargetId)}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-display font-bold text-xs tracking-wide shadow-lg shadow-amber-500/25 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <Play className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Bruch durchziehen</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleAudioMuted}
+            className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/70 text-slate-300 cursor-pointer"
+            aria-label="Ton umschalten"
+          >
+            {audioMuted ? (
+              <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Main Workspace Split: Top Half (Floorplan + Inspector) / Bottom Half (DAW Timeline) */}
+      <div className="flex-1 min-h-0 flex flex-col gap-2.5 p-2.5 lg:p-3 overflow-hidden">
+        {/* TOP HALF (~55% height) */}
+        <div className="flex-[55] min-h-0 flex gap-2.5 overflow-hidden">
+          {/* Interactive Blueprint Floorplan */}
+          <div className="flex-1 min-w-0 min-h-0">
+            <BlueprintFloorplan
+              target={target}
+              intel={intel}
+              resolvedPlan={resolvedPlan}
+              snapshot={snapshot}
+              selectedFloor={selectedFloor}
+              selectedNodeId={selectedNodeId}
+              selectedBlockId={selectedBlockId}
+              onSelectNode={(nid) => {
+                setSelectedNodeId(nid);
+                setSelectedBlockId(null);
+                setInspectorTab('inspect');
+              }}
+              onQuickAddNode={handleQuickAddNode}
+            />
+          </div>
+
+          {/* Right Sidebar: Taktik-Inspektor, Synchronpunkte, Plan B */}
+          <aside className="w-76 xl:w-84 shrink-0 noir-card rounded-xl flex flex-col min-h-0 overflow-hidden border-slate-800">
+            {/* Sidebar Tab Bar */}
+            <div className="grid grid-cols-3 p-1 bg-slate-950/90 border-b border-slate-800 shrink-0 gap-1">
+              <button
+                type="button"
+                onClick={() => setInspectorTab('inspect')}
+                className={`py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer ${
+                  inspectorTab === 'inspect'
+                    ? 'bg-sky-500/25 text-sky-200 border border-sky-400/40'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Inspektor
+              </button>
+              <button
+                type="button"
+                onClick={() => setInspectorTab('sync')}
+                className={`py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
+                  inspectorTab === 'sync'
+                    ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Link2 className="w-3 h-3" />
+                <span>Sync ({rawPlan.syncBarriers.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setInspectorTab('planb')}
+                className={`py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
+                  inspectorTab === 'planb'
+                    ? 'bg-rose-500/20 text-rose-200 border border-rose-400/40'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <GitBranch className="w-3 h-3" />
+                <span>Plan B</span>
+              </button>
+            </div>
+
+            {/* Toast Feedback */}
+            {syncFeedback && (
+              <div
+                className={`mx-2.5 mt-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border animate-toast ${
+                  syncFeedback.ok
+                    ? 'bg-emerald-500/15 border-emerald-400/50 text-emerald-200'
+                    : 'bg-rose-500/20 border-rose-400/50 text-rose-200'
+                }`}
+              >
+                {syncFeedback.msg}
+              </div>
+            )}
+
+            {/* Sidebar Tab Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto ns-scroll p-3 space-y-3">
+              {/* -------- TAB: INSPEKTOR (Node or Block + Validation) -------- */}
+              {inspectorTab === 'inspect' && (
+                <>
+                  {/* Selected Floorplan Node Details */}
+                  {selectedNode && !selectedBlock && (
+                    <div className="p-3 rounded-xl bg-slate-900/90 border border-sky-400/35 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-mono-tech text-[10px] uppercase text-sky-300">
+                            {NODE_KIND_LABELS[selectedNode.kind]} · {FLOOR_LABELS[selectedNode.floor]}
+                          </span>
+                          <h3 className="font-display font-bold text-sm text-white leading-snug">
+                            {selectedNode.label}
+                          </h3>
+                        </div>
+                        {selectedNode.lootValue && (
+                          <span className="font-mono-tech text-xs font-bold text-amber-300 shrink-0">
+                            {formatEur(selectedNode.lootValue)}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-300 leading-snug">
+                        {selectedNode.description}
+                      </p>
+
+                      <div className="grid grid-cols-3 gap-1.5 font-mono-tech text-[10px]">
+                        <div className="p-1.5 rounded bg-slate-950/80 text-center">
+                          <div className="text-slate-500">Basiszeit</div>
+                          <div className="text-white font-bold">{selectedNode.baseDurationSec}s</div>
+                        </div>
+                        <div className="p-1.5 rounded bg-slate-950/80 text-center">
+                          <div className="text-slate-500">Lärm</div>
+                          <div className="text-amber-300 font-bold">{selectedNode.noiseLevel}</div>
+                        </div>
+                        <div className="p-1.5 rounded bg-slate-950/80 text-center">
+                          <div className="text-slate-500">Spur</div>
+                          <div className="text-rose-300 font-bold">{selectedNode.traceRisk}</div>
+                        </div>
+                      </div>
+
+                      {selectedNode.requiredSkill && (
+                        <div className="text-[11px] text-slate-400 flex items-center justify-between">
+                          <span>
+                            Können:{' '}
+                            <strong className="text-sky-200">
+                              {SKILL_LABELS[selectedNode.requiredSkill]}
+                            </strong>
+                          </span>
+                          {selectedNode.recommendedTool && (
+                            <span className="text-amber-200 truncate ml-2">
+                              {TOOLS[selectedNode.recommendedTool]?.name.split(' ')[0]}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleQuickAddNode(selectedNode.id)}
+                        className="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-display font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Auf {crew[selectedCrewId]?.name.split(' ')[0]}s Spur setzen</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Selected Timeline Action Block Editor */}
+                  {selectedBlock && (
+                    <div className="p-3 rounded-xl bg-slate-900/90 border border-amber-400/45 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-mono-tech text-[10px] uppercase text-amber-300">
+                            {crew[selectedBlock.crewId]?.name} · {ACTION_TYPE_LABELS[selectedBlock.type]}
+                          </span>
+                          <h3 className="font-display font-bold text-sm text-white">
+                            {selectedBlock.label}
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            removePlanBlock(selectedBlock.id);
+                            setSelectedBlockId(null);
+                          }}
+                          className="p-1 rounded bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 cursor-pointer"
+                          title="Block entfernen"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Start Time Control */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between font-mono-tech text-[11px]">
+                          <span className="text-slate-400">Wunsch-Startzeit:</span>
+                          <span className="text-sky-200 font-bold">
+                            {formatShortSec(selectedBlock.startSec)} (Effektiv:{' '}
+                            {formatShortSec(selectedBlock.computedStartSec ?? selectedBlock.startSec)})
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={75}
+                          step={1}
+                          value={selectedBlock.startSec}
+                          onChange={(e) =>
+                            updatePlanBlock(selectedBlock.id, {
+                              startSec: Number(e.target.value),
+                            })
+                          }
+                          className="ns-scrubber w-full"
+                        />
+                      </div>
+
+                      {/* Duration Control for wait / lookout */}
+                      {(selectedBlock.type === 'wait' || selectedBlock.type === 'lookout') && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between font-mono-tech text-[11px]">
+                            <span className="text-slate-400">Dauer:</span>
+                            <span className="text-amber-300 font-bold">
+                              {formatShortSec(selectedBlock.durationSec)}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={3}
+                            max={35}
+                            step={1}
+                            value={selectedBlock.durationSec}
+                            onChange={(e) =>
+                              updatePlanBlock(selectedBlock.id, {
+                                durationSec: Number(e.target.value),
+                              })
+                            }
+                            className="ns-scrubber w-full"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-1.5 font-mono-tech text-[10px]">
+                        <div className="p-1.5 rounded bg-slate-950/80 text-center">
+                          <div className="text-slate-500">Dauer</div>
+                          <div className="text-white font-bold">{selectedBlock.durationSec}s</div>
+                        </div>
+                        <div className="p-1.5 rounded bg-slate-950/80 text-center">
+                          <div className="text-slate-500">Lärm</div>
+                          <div className="text-amber-300 font-bold">{selectedBlock.estimatedNoise}</div>
+                        </div>
+                        <div className="p-1.5 rounded bg-slate-950/80 text-center">
+                          <div className="text-slate-500">Spur</div>
+                          <div className="text-rose-300 font-bold">{selectedBlock.estimatedTraceRisk}</div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSyncSourceBlockId(selectedBlock.id)}
+                        className="w-full py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                        <span>Synchronpunkt ab hier setzen</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {!selectedNode && !selectedBlock && (
+                    <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-xs text-slate-400 leading-relaxed">
+                      Klicke einen <strong className="text-sky-300">Knoten im Grundriss</strong>{' '}
+                      (oder Doppelklick zum Hinzufügen) oder einen{' '}
+                      <strong className="text-amber-300">Block auf der Zeitleiste</strong>, um
+                      Details, Werkzeug und Synchronpunkte zu bearbeiten.
+                    </div>
+                  )}
+
+                  {/* Quick Buy Blueprints */}
+                  {!intel.blueprintPurchased && (
+                    <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-sky-200 leading-tight">
+                        Nebel lichten? Baupläne decken alle Innenräume auf.
+                      </div>
+                      <button
+                        type="button"
+                        disabled={bankrollEur < blueprintCost}
+                        onClick={() => buyTargetBlueprints(activeTargetId)}
+                        className="shrink-0 px-2.5 py-1 rounded-lg bg-sky-400 hover:bg-sky-300 disabled:opacity-40 text-slate-950 font-mono-tech font-bold text-[10px] cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        {formatEur(blueprintCost)}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Plan Validation & Warnings */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-wider text-slate-400">
+                      <span>Plan-Prüfung</span>
+                      <span className={errorCount > 0 ? 'text-rose-400' : 'text-emerald-400'}>
+                        {errorCount > 0
+                          ? `${errorCount} Fehler`
+                          : warningCount > 0
+                            ? `${warningCount} Hinweise`
+                            : 'Bereit'}
+                      </span>
+                    </div>
+
+                    {resolvedPlan.issues.length === 0 ? (
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-400/35 text-[11px] text-emerald-200 flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Keine Konflikte im Ablaufplan erkannt.</span>
+                      </div>
+                    ) : (
+                      resolvedPlan.issues.map((iss, idx) => (
+                        <div
+                          key={`${iss.code}_${idx}`}
+                          className={`p-2 rounded-lg border text-[11px] flex items-start gap-1.5 leading-snug ${
+                            iss.severity === 'error'
+                              ? 'bg-rose-500/15 border-rose-400/45 text-rose-200'
+                              : iss.severity === 'warning'
+                                ? 'bg-amber-500/12 border-amber-400/40 text-amber-100'
+                                : 'bg-sky-500/10 border-sky-400/30 text-sky-200'
+                          }`}
+                        >
+                          {iss.severity === 'error' ? (
+                            <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-400" />
+                          ) : (
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+                          )}
+                          <span>{iss.message}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* -------- TAB: SYNCHRONPUNKTE -------- */}
+              {inspectorTab === 'sync' && (
+                <div className="space-y-3">
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Verknüpfe zwei Spuren: Block B startet erst, wenn Block A vollständig abgeschlossen ist (z. B. Strom kappen → Eindringen).
+                  </p>
+
+                  {/* Dropdown Creator */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-400/35 space-y-2">
+                    <div className="font-mono-tech text-[10px] uppercase text-amber-300">
+                      Neuer Synchronpunkt
+                    </div>
+                    <select
+                      value={syncFromDropdown}
+                      onChange={(e) => setSyncFromDropdown(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                    >
+                      <option value="">1. Erst wenn fertig (Block A)…</option>
+                      {resolvedPlan.plan.blocks.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          [{crew[b.crewId]?.name.split(' ')[0]}] {b.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={syncToDropdown}
+                      onChange={(e) => setSyncToDropdown(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                    >
+                      <option value="">2. …startet Block B</option>
+                      {resolvedPlan.plan.blocks.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          [{crew[b.crewId]?.name.split(' ')[0]}] {b.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={!syncFromDropdown || !syncToDropdown}
+                      onClick={handleDropdownSyncCreate}
+                      className="w-full py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold text-xs cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      Synchronpunkt setzen
+                    </button>
+                  </div>
+
+                  {/* Active Sync Barriers List */}
+                  <div className="space-y-1.5">
+                    {rawPlan.syncBarriers.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic">
+                        Noch keine Synchronpunkte gesetzt.
+                      </p>
+                    ) : (
+                      rawPlan.syncBarriers.map((sb) => {
+                        const fromB = resolvedPlan.blocksById[sb.fromBlockId];
+                        const toB = resolvedPlan.blocksById[sb.toBlockId];
+                        return (
+                          <div
+                            key={sb.id}
+                            className="p-2.5 rounded-lg bg-slate-900/90 border border-amber-400/30 flex items-start justify-between gap-2"
+                          >
+                            <div className="min-w-0 text-[11px]">
+                              <div className="font-semibold text-amber-200 truncate">
+                                {sb.label}
+                              </div>
+                              <div className="text-slate-400 font-mono-tech text-[10px] mt-0.5">
+                                {crew[sb.fromCrewId]?.name.split(' ')[0]} ({fromB?.label ?? '?'}) →{' '}
+                                {crew[sb.toCrewId]?.name.split(' ')[0]} ({toB?.label ?? '?'})
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeSyncBarrier(sb.id)}
+                              className="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 cursor-pointer shrink-0"
+                              title="Synchronpunkt entfernen"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* -------- TAB: PLAN B AUSWEICHZWEIGE -------- */}
+              {inspectorTab === 'planb' && (
+                <div className="space-y-2.5">
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Hinterlege Ausweichregeln je Komplize für Alarmfälle oder deinen Funkbefehl{' '}
+                    <span className="font-mono-tech text-amber-300">[Taste 2]</span>.
+                  </p>
+
+                  {rawPlan.assignedCrewIds.map((cid) => {
+                    const member = crew[cid];
+                    const existing = rawPlan.planBBranches.find((b) => b.crewId === cid);
+                    const currentTrigger: PlanBTrigger = existing?.trigger ?? 'on_alarm';
+                    const currentAction: PlanBFallbackAction =
+                      existing?.action ?? 'abort_to_car';
+
+                    return (
+                      <div
+                        key={cid}
+                        className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <CharacterAvatar
+                              portraitKey={member.portraitKey}
+                              name={member.name}
+                              accentColor={member.accentColor}
+                              size="xs"
+                              ring
+                            />
+                            <span className="text-xs font-bold text-white">
+                              {member.name.split(' ')[0]}
+                            </span>
+                          </div>
+                          {existing && (
+                            <button
+                              type="button"
+                              onClick={() => removePlanBBranch(existing.id)}
+                              className="text-[10px] text-slate-500 hover:text-rose-300 cursor-pointer"
+                            >
+                              Zurücksetzen
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-1.5">
+                          <select
+                            value={currentTrigger}
+                            onChange={(e) =>
+                              handleUpdatePlanB(
+                                cid,
+                                e.target.value as PlanBTrigger,
+                                currentAction
+                              )
+                            }
+                            className="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-[11px] text-slate-200"
+                          >
+                            {(Object.keys(PLAN_B_TRIGGER_LABELS) as PlanBTrigger[]).map((tr) => (
+                              <option key={tr} value={tr}>
+                                {PLAN_B_TRIGGER_LABELS[tr]}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={currentAction}
+                            onChange={(e) =>
+                              handleUpdatePlanB(
+                                cid,
+                                currentTrigger,
+                                e.target.value as PlanBFallbackAction
+                              )
+                            }
+                            className="w-full px-2 py-1 rounded bg-slate-950 border border-amber-500/35 text-[11px] text-amber-100"
+                          >
+                            {(Object.keys(PLAN_B_ACTION_LABELS) as PlanBFallbackAction[]).map(
+                              (act) => (
+                                <option key={act} value={act}>
+                                  → {PLAN_B_ACTION_LABELS[act]}
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+
+        {/* BOTTOM HALF (~45% height): Multi-Track DAW Timeline */}
+        <div className="flex-[45] min-h-0 overflow-hidden">
+          <TimelineDAW
+            target={target}
+            resolvedPlan={resolvedPlan}
+            snapshot={snapshot}
+            allConflicts={allConflicts}
+            selectedBlockId={selectedBlockId}
+            syncSourceBlockId={syncSourceBlockId}
+            onSelectBlock={(bid) => {
+              setSelectedBlockId(bid);
+              if (bid) {
+                const blk = resolvedPlan.blocksById[bid];
+                if (blk) {
+                  setSelectedFloor(blk.floor);
+                  if (blk.targetNodeId) setSelectedNodeId(blk.targetNodeId);
+                }
+                setInspectorTab('inspect');
+              }
+            }}
+            onStartSyncLink={(bid) => {
+              setSyncSourceBlockId(bid);
+              setInspectorTab('sync');
+            }}
+            onCompleteSyncLink={handleCompleteSyncLink}
+            onCancelSyncLink={() => setSyncSourceBlockId(null)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
