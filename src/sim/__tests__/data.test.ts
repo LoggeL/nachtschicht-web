@@ -91,7 +91,9 @@ describe('Nachtschicht lore & target data integrity', () => {
     expect(crew.rico.traits.greed).toBeGreaterThanOrEqual(70);
 
     expect(Object.keys(FENCES)).toHaveLength(3);
-    expect(Object.keys(TOOLS)).toHaveLength(10);
+    expect(Object.keys(TOOLS)).toHaveLength(12);
+    expect(TOOLS.mask).toBeDefined();
+    expect(TOOLS.dark_clothing).toBeDefined();
     expect(COUNTERMEASURES.length).toBeGreaterThanOrEqual(5);
     expect(createInitialWorkshopUpgrades()).toHaveLength(4);
     expect(createInitialStoryBeats()).toHaveLength(5);

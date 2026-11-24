@@ -2,25 +2,32 @@ import { create } from 'zustand';
 import {
   ActionBlock,
   ActionType,
+  ActiveMinigame,
   CaseFileLedger,
   CountermeasureId,
   CrewId,
   CrewMember,
   EndingChoice,
   EscapeState,
+  EvidenceDraft,
   FenceId,
   FloorId,
+  ForensicLoadout,
   GamePhase,
+  GraphicsQuality,
   HeistDebrief,
   HeistPlan,
   HeistTarget,
   IntelState,
+  InteractOutcome,
   LiveExecutionState,
+  LiveGuardState,
   PlanBBranch,
   RadioCommandType,
   RehearsalSnapshot,
   ResolvedPlan,
   ScoutingHudState,
+  StealthTelemetry,
   StoryBeat,
   TargetId,
   ToolId,
@@ -40,6 +47,7 @@ import {
   createInitialIntel,
   createInitialStoryBeats,
   createInitialWorkshopUpgrades,
+  getDefaultForensicLoadout,
 } from '../sim/data';
 import {
   calculateActionMetrics,
@@ -52,19 +60,29 @@ import { simulateRehearsalAt } from '../sim/simulator';
 import {
   LiveTickOptions,
   applyRadioCommand,
+  computeStealthTelemetry,
   createInitialEscapeState,
   createInitialLiveState,
   playerInteractWithNode,
+  pushNoisePulse,
   tickLiveExecution,
 } from '../sim/liveEngine';
 import {
+  appendEvidenceToCaseFile,
   applyCountermeasureToCaseFile,
   createInitialCaseFile,
   settleHeistDebrief,
 } from '../sim/caseFile';
+import {
+  attemptCircuitWireAction,
+  attemptLockpickPin,
+  autoCompleteMinigame,
+  createMinigameForNode,
+} from '../sim/minigames';
+import { canScoutNodeFrom } from '../sim/pathfinding';
 
 // ============================================================================
-// NACHTSCHICHT — Root Zustand Store (Shared Contract for @world & @ui)
+// NACHTSCHICHT — Root Zustand Store (Round 2 Wave 1 Realism Contract)
 // ============================================================================
 
 const STORAGE_KEY = 'nachtschicht_save_v1';
@@ -83,6 +101,7 @@ interface PersistedSave {
   caseFile: CaseFileLedger;
   storyBeats: StoryBeat[];
   selectedEnding: EndingChoice | null;
+  graphicsQuality?: GraphicsQuality;
 }
 
 function buildInitialIntelMap(hasBlueprintUpgrade = false): Record<TargetId, IntelState> {
@@ -98,9 +117,9 @@ function buildInitialIntelMap(hasBlueprintUpgrade = false): Record<TargetId, Int
 }
 
 function buildInitialPlansMap(crew: Record<CrewId, CrewMember>): Record<TargetId, HeistPlan> {
-  const recruited = (Object.values(crew)
+  const recruited = Object.values(crew)
     .filter((c) => c.recruited && c.status === 'available')
-    .map((c) => c.id)) as CrewId[];
+    .map((c) => c.id) as CrewId[];
   return {
     casa_oro: buildStarterPlan('casa_oro', recruited),
     perla_del_mar: buildStarterPlan('perla_del_mar', recruited),
@@ -121,6 +140,7 @@ function createDefaultScoutingState(): ScoutingHudState {
     lastDiscoveryToast: null,
     playerPos: { x: 0, z: 10 },
     playerFloor: 0,
+    blockedReason: null,
   };
 }
 
@@ -156,6 +176,7 @@ function persistState(state: GameStore): void {
       caseFile: state.caseFile,
       storyBeats: state.storyBeats,
       selectedEnding: state.selectedEnding,
+      graphicsQuality: state.graphicsQuality,
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
@@ -183,6 +204,7 @@ export interface GameStore {
   bankrollEur: number;
   activeTargetId: TargetId;
   completedTargetIds: TargetId[];
+  graphicsQuality: GraphicsQuality;
 
   // Entities & Economy
   crew: Record<CrewId, CrewMember>;
@@ -216,8 +238,9 @@ export interface GameStore {
   getResolvedPlan: (targetId?: TargetId) => ResolvedPlan;
   getRehearsalSnapshot: (timeSec?: number) => RehearsalSnapshot;
 
-  // Navigation & Campaign Flow
+  // Navigation, Quality & Campaign Flow
   setPhase: (phase: GamePhase) => void;
+  setGraphicsQuality: (quality: GraphicsQuality) => void;
   startNewCampaign: () => void;
   continueCampaign: () => void;
   quickPlayTarget: (
@@ -228,18 +251,26 @@ export interface GameStore {
   returnToSafehouse: () => void;
   resetSave: () => void;
 
-  // Crew, Tools & Workshop
+  // Crew, Forensic Loadout, Tools & Workshop
   recruitCrew: (crewId: CrewId) => boolean;
   toggleCrewOnPlan: (crewId: CrewId) => void;
   buyTool: (toolId: ToolId) => boolean;
   equipTool: (crewId: CrewId, toolId: ToolId) => void;
   unequipTool: (crewId: CrewId, toolId: ToolId) => void;
+  setCrewForensicLoadout: (
+    crewId: CrewId,
+    patch: Partial<ForensicLoadout>
+  ) => void;
   completeLoyaltyQuest: (crewId: CrewId) => boolean;
   buyWorkshopUpgrade: (upgradeId: WorkshopUpgradeId) => boolean;
 
-  // Scouting & Intel (Fog of War)
+  // Scouting & Intel (Wall-Occluded Fog of War)
   setScoutingState: (patch: Partial<ScoutingHudState>) => void;
-  discoverNode: (targetId: TargetId, nodeId: string) => void;
+  discoverNode: (
+    targetId: TargetId,
+    nodeId: string,
+    observerCheck?: { pos: Vec2; floor: FloorId; binocularsActive?: boolean }
+  ) => boolean;
   timeGuardPatrol: (targetId: TargetId, guardId: string) => void;
   scoutRoom: (targetId: TargetId, roomId: string) => void;
   buyTargetBlueprints: (targetId: TargetId) => boolean;
@@ -265,21 +296,52 @@ export interface GameStore {
   setRehearsalPlaying: (playing: boolean) => void;
   setRehearsalSpeed: (speed: 1 | 2 | 4) => void;
 
-  // Live Execution & Radio
+  // Live Execution, Positional Noise, Guard Sync & Minigames
   launchHeist: (targetId?: TargetId) => void;
   tickLiveExecution: (dtSec: number, options?: LiveTickOptions) => void;
   updatePlayerLivePos: (
     pos: Vec2,
     floor: FloorId,
     headingDeg: number,
-    sneaking: boolean
+    sneaking: boolean,
+    speedMps?: number
   ) => void;
-  interactPlayerWithNode: (nodeId: string) => void;
+  interactPlayerWithNode: (nodeId: string, outcome?: InteractOutcome) => void;
+  emitNoisePulse: (
+    pos: Vec2,
+    floor: FloorId,
+    noiseDb: number,
+    label: string,
+    sourceCrewId?: CrewId
+  ) => void;
+  syncLiveGuards: (guards: LiveGuardState[]) => void;
+  syncStealthTelemetry: (patch: Partial<StealthTelemetry>) => void;
+  recordWitnessEvidence: (draft: EvidenceDraft) => void;
   issueRadioCommand: (
     command: RadioCommandType,
     targetCrewId?: CrewId | 'all'
   ) => void;
   triggerAlarmExternal: (reason?: string) => void;
+
+  // Tactile Minigames (Lockpicking / Safe Dial / Securion Circuit Bypass)
+  startMinigame: (nodeId: string) => ActiveMinigame | null;
+  attemptMinigameLockpick: (cursorValue: number) => {
+    hit: boolean;
+    slipped: boolean;
+    completed: boolean;
+    failed: boolean;
+  };
+  attemptMinigameCircuitWire: (
+    wireId: string,
+    action: 'cut' | 'bridge'
+  ) => {
+    correct: boolean;
+    trippedTamper: boolean;
+    completed: boolean;
+    failed: boolean;
+  };
+  autoCompleteActiveMinigame: () => void;
+  cancelMinigame: () => void;
 
   // Escape & Debrief
   startEscape: () => void;
@@ -297,6 +359,17 @@ export interface GameStore {
 const initialCrew = createInitialCrew();
 const savedOnBoot = loadSavedState();
 
+const DEFAULT_OWNED_TOOLS: ToolId[] = [
+  'lockpick_set',
+  'electronic_bypass',
+  'camera_loop',
+  'glass_cutter',
+  'crowbar',
+  'gloves',
+  'mask',
+  'dark_clothing',
+];
+
 export const useGameStore = create<GameStore>((set, get) => ({
   phase: 'title',
   hasSavedGame: savedOnBoot !== null,
@@ -304,9 +377,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   bankrollEur: 12000,
   activeTargetId: 'casa_oro',
   completedTargetIds: [],
+  graphicsQuality: savedOnBoot?.graphicsQuality ?? 'high',
 
   crew: initialCrew,
-  ownedTools: ['lockpick_set', 'electronic_bypass', 'camera_loop', 'gloves'],
+  ownedTools: [...DEFAULT_OWNED_TOOLS],
   workshopUpgrades: createInitialWorkshopUpgrades(),
   intelByTarget: buildInitialIntelMap(false),
   plansByTarget: buildInitialPlansMap(initialCrew),
@@ -329,9 +403,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // ---- Derived Selectors ----
   getActiveTarget: () => TARGETS[get().activeTargetId],
-
   getActiveIntel: () => get().intelByTarget[get().activeTargetId],
-
   getActivePlan: () => get().plansByTarget[get().activeTargetId],
 
   getResolvedPlan: (targetId) => {
@@ -378,6 +450,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ phase, rehearsalPlaying: false });
   },
 
+  setGraphicsQuality: (graphicsQuality) => {
+    set({ graphicsQuality });
+    persistState(get());
+  },
+
   startNewCampaign: () => {
     const freshCrew = createInitialCrew();
     const freshIntel = buildInitialIntelMap(false);
@@ -391,7 +468,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       activeTargetId: 'casa_oro',
       completedTargetIds: [],
       crew: freshCrew,
-      ownedTools: ['lockpick_set', 'electronic_bypass', 'camera_loop', 'gloves'],
+      ownedTools: [...DEFAULT_OWNED_TOOLS],
       workshopUpgrades: createInitialWorkshopUpgrades(),
       intelByTarget: freshIntel,
       plansByTarget: freshPlans,
@@ -433,6 +510,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       storyBeats: saved.storyBeats,
       activeStoryBeatId: null,
       selectedEnding: saved.selectedEnding,
+      graphicsQuality: saved.graphicsQuality ?? 'high',
       selectedFloor: 0,
       rehearsalTimeSec: 0,
       rehearsalPlaying: false,
@@ -444,7 +522,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   quickPlayTarget: (targetId, mode = 'planning') => {
     const s = get();
     const target = TARGETS[targetId];
-    // For quick-play testing, ensure all 5 crew are available on higher targets so players can test multi-track plans
     const updatedCrew = { ...s.crew };
     if (targetId === 'villa_mirador' || targetId === 'schatzkammer_dresden') {
       updatedCrew.toni = { ...updatedCrew.toni, recruited: true };
@@ -454,8 +531,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       .filter((c) => c.recruited && c.status === 'available')
       .map((c) => c.id);
     const starterPlan = buildStarterPlan(targetId, availableIds);
-
-    // Pre-scout main exterior + key interior nodes slightly for smooth quick-play
     const existingIntel = s.intelByTarget[targetId] ?? createInitialIntel(target);
 
     set({
@@ -520,7 +595,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       activeTargetId: 'casa_oro',
       completedTargetIds: [],
       crew: freshCrew,
-      ownedTools: ['lockpick_set', 'electronic_bypass', 'camera_loop', 'gloves'],
+      ownedTools: [...DEFAULT_OWNED_TOOLS],
       workshopUpgrades: createInitialWorkshopUpgrades(),
       intelByTarget: buildInitialIntelMap(false),
       plansByTarget: buildInitialPlansMap(freshCrew),
@@ -534,20 +609,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  // ---- Crew, Tools & Workshop ----
+  // ---- Crew, Forensic Loadout, Tools & Workshop ----
   recruitCrew: (crewId) => {
     const s = get();
     const member = s.crew[crewId];
     if (!member || member.recruited || s.bankrollEur < member.recruitCostEur) {
       return false;
     }
-    const nextCrew = {
-      ...s.crew,
-      [crewId]: { ...member, recruited: true },
-    };
     set({
       bankrollEur: s.bankrollEur - member.recruitCostEur,
-      crew: nextCrew,
+      crew: {
+        ...s.crew,
+        [crewId]: { ...member, recruited: true },
+      },
     });
     persistState(get());
     return true;
@@ -555,7 +629,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   toggleCrewOnPlan: (crewId) => {
     const s = get();
-    if (crewId === 'mara') return; // Mara is always in the team
+    if (crewId === 'mara') return;
     const member = s.crew[crewId];
     if (!member || !member.recruited || member.status !== 'available') return;
 
@@ -635,6 +709,47 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistState(get());
   },
 
+  setCrewForensicLoadout: (crewId, patch) => {
+    const s = get();
+    const member = s.crew[crewId];
+    if (!member) return;
+    const plan = s.plansByTarget[s.activeTargetId];
+    const current =
+      plan.forensicLoadoutByCrew?.[crewId] ?? getDefaultForensicLoadout(member);
+    const updated: ForensicLoadout = { ...current, ...patch };
+
+    // Sync passive gear into member's equippedTools cleanly
+    let nextTools = [...member.equippedTools];
+    const syncFlag = (tid: ToolId, enabled: boolean) => {
+      if (enabled && !nextTools.includes(tid)) nextTools.push(tid);
+      if (!enabled) nextTools = nextTools.filter((t) => t !== tid);
+    };
+    syncFlag('gloves', updated.gloves);
+    syncFlag('mask', updated.mask);
+    syncFlag('dark_clothing', updated.darkClothing);
+    if (!nextTools.includes(updated.entryTool)) {
+      nextTools.push(updated.entryTool);
+    }
+
+    set({
+      crew: {
+        ...s.crew,
+        [crewId]: { ...member, equippedTools: nextTools },
+      },
+      plansByTarget: {
+        ...s.plansByTarget,
+        [s.activeTargetId]: {
+          ...plan,
+          forensicLoadoutByCrew: {
+            ...(plan.forensicLoadoutByCrew ?? {}),
+            [crewId]: updated,
+          },
+        },
+      },
+    });
+    persistState(get());
+  },
+
   completeLoyaltyQuest: (crewId) => {
     const s = get();
     const member = s.crew[crewId];
@@ -673,23 +788,44 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return true;
   },
 
-  // ---- Scouting & Intel ----
+  // ---- Scouting & Intel (Wall-Occluded) ----
   setScoutingState: (patch) => {
     set((s) => ({ scoutingState: { ...s.scoutingState, ...patch } }));
   },
 
-  discoverNode: (targetId, nodeId) => {
+  discoverNode: (targetId, nodeId, observerCheck) => {
     const s = get();
     const target = TARGETS[targetId];
     const intel = s.intelByTarget[targetId];
-    if (!target || !intel || intel.discoveredNodeIds.includes(nodeId)) return;
+    if (!target || !intel || intel.discoveredNodeIds.includes(nodeId)) return false;
 
     const node = target.nodes.find((n) => n.id === nodeId);
+    if (!node) return false;
+
+    // Optional strict solid-wall Line-of-Sight verification when called from 3D scouting
+    if (observerCheck) {
+      const check = canScoutNodeFrom({
+        target,
+        observerPos: observerCheck.pos,
+        observerFloor: observerCheck.floor,
+        node,
+        binocularsActive: observerCheck.binocularsActive,
+      });
+      if (!check.canScout) {
+        set((st) => ({
+          scoutingState: {
+            ...st.scoutingState,
+            blockedReason: check.reason ?? 'wall_occluded',
+          },
+        }));
+        return false;
+      }
+    }
+
     const discoveredNodeIds = [...intel.discoveredNodeIds, nodeId];
-    const scoutedRoomIds =
-      node && !intel.scoutedRoomIds.includes(node.roomId)
-        ? [...intel.scoutedRoomIds, node.roomId]
-        : intel.scoutedRoomIds;
+    const scoutedRoomIds = !intel.scoutedRoomIds.includes(node.roomId)
+      ? [...intel.scoutedRoomIds, node.roomId]
+      : intel.scoutedRoomIds;
 
     const completionPercent = computeIntelCompletion(
       target,
@@ -709,10 +845,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       },
       scoutingState: {
         ...s.scoutingState,
-        lastDiscoveryToast: node ? `Entdeckt: ${node.label}` : null,
+        blockedReason: null,
+        lastDiscoveryToast: `Entdeckt: ${node.label}`,
       },
     });
     persistState(get());
+    return true;
   },
 
   timeGuardPatrol: (targetId, guardId) => {
@@ -770,7 +908,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const cost = 2500 * target.difficulty;
     if (!intel || intel.blueprintPurchased || s.bankrollEur < cost) return false;
 
-    // Reveals all rooms and non-hidden structural nodes (hidden traps still require on-site scouting!)
     const discoveredNodeIds = Array.from(
       new Set([
         ...intel.discoveredNodeIds,
@@ -850,6 +987,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       type,
       member,
       node,
+      target,
       fromPos: lastBlock?.targetPos ?? target.getawayPos,
       fromFloor: lastBlock?.floor ?? 0,
       targetPos,
@@ -857,6 +995,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       toolsById: TOOLS,
       explicitToolId: input.toolId,
       requestedDurationSec: input.durationSec,
+      forensic: plan.forensicLoadoutByCrew?.[input.crewId],
     });
 
     const newBlock: ActionBlock = {
@@ -872,6 +1011,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       estimatedNoise: metrics.estimatedNoise,
       estimatedTraceRisk: metrics.estimatedTraceRisk,
       toolId: input.toolId ?? metrics.usedToolId,
+      pathWaypoints: metrics.pathWaypoints,
     };
 
     const assignedCrewIds = plan.assignedCrewIds.includes(input.crewId)
@@ -1046,7 +1186,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setRehearsalPlaying: (playing) => set({ rehearsalPlaying: playing }),
   setRehearsalSpeed: (speed) => set({ rehearsalSpeed: speed }),
 
-  // ---- Live Execution & Radio ----
+  // ---- Live Execution, Noise, Guards & Minigames ----
   launchHeist: (targetId) => {
     const s = get();
     const tid = targetId ?? s.activeTargetId;
@@ -1084,36 +1224,133 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ liveState: nextLive });
   },
 
-  updatePlayerLivePos: (pos, floor, headingDeg, sneaking) => {
+  updatePlayerLivePos: (pos, floor, headingDeg, sneaking, speedMps) => {
     const s = get();
     if (!s.liveState || !s.liveState.crew.mara) return;
     const mara = s.liveState.crew.mara;
-    set({
-      liveState: {
-        ...s.liveState,
-        crew: {
-          ...s.liveState.crew,
-          mara: {
-            ...mara,
-            pos: { ...pos },
-            floor,
-            headingDeg,
-            sneaking,
-          },
+    const nextLive = {
+      ...s.liveState,
+      crew: {
+        ...s.liveState.crew,
+        mara: {
+          ...mara,
+          pos: { ...pos },
+          floor,
+          headingDeg,
+          sneaking,
+          speed: speedMps ?? mara.speed,
         },
       },
-    });
+    };
+
+    // Emit realistic positional footstep noise if running or carrying heavy loot
+    const effectiveSpeed = speedMps ?? 0;
+    if (effectiveSpeed >= 3.2 && !sneaking) {
+      const bagNoise = mara.carryingLootItems.length * 7;
+      const lastPulse = nextLive.noiseEvents[nextLive.noiseEvents.length - 1];
+      if (!lastPulse || nextLive.elapsedSec - lastPulse.emittedAtSec >= 0.45) {
+        nextLive.noiseEvents = [...nextLive.noiseEvents];
+        pushNoisePulse(nextLive, {
+          pos,
+          floor,
+          noiseDb: 48 + Math.min(20, effectiveSpeed * 3) + bagNoise,
+          sourceCrewId: 'mara',
+          label: 'Schnelle Schritte (Mara)',
+        });
+      }
+    }
+
+    nextLive.stealthTelemetry = computeStealthTelemetry(
+      nextLive,
+      TARGETS[nextLive.targetId],
+      s.crew,
+      s.plansByTarget[nextLive.targetId]?.forensicLoadoutByCrew
+    );
+
+    set({ liveState: nextLive });
   },
 
-  interactPlayerWithNode: (nodeId) => {
+  interactPlayerWithNode: (nodeId, outcome) => {
     const s = get();
     if (!s.liveState) return;
     const nextLive = playerInteractWithNode(
       s.liveState,
       TARGETS[s.liveState.targetId],
-      nodeId
+      nodeId,
+      outcome
     );
     set({ liveState: nextLive });
+  },
+
+  emitNoisePulse: (pos, floor, noiseDb, label, sourceCrewId) => {
+    const s = get();
+    if (!s.liveState) return;
+    const next = structuredClone(s.liveState);
+    pushNoisePulse(next, { pos, floor, noiseDb, label, sourceCrewId });
+    set({ liveState: next });
+  },
+
+  syncLiveGuards: (guards) => {
+    const s = get();
+    if (!s.liveState) return;
+    const next = {
+      ...s.liveState,
+      guards,
+    };
+    next.stealthTelemetry = computeStealthTelemetry(
+      next,
+      TARGETS[next.targetId],
+      s.crew,
+      s.plansByTarget[next.targetId]?.forensicLoadoutByCrew
+    );
+    set({ liveState: next });
+  },
+
+  syncStealthTelemetry: (patch) => {
+    const s = get();
+    if (!s.liveState) return;
+    set({
+      liveState: {
+        ...s.liveState,
+        stealthTelemetry: { ...s.liveState.stealthTelemetry, ...patch },
+      },
+    });
+  },
+
+  recordWitnessEvidence: (draft) => {
+    const s = get();
+    if (s.liveState && s.phase === 'executing') {
+      const exists = s.liveState.pendingEvidence.some(
+        (e) => e.type === draft.type && e.title === draft.title
+      );
+      if (exists) return;
+      set({
+        liveState: {
+          ...s.liveState,
+          pendingEvidence: [...s.liveState.pendingEvidence, draft],
+        },
+      });
+      return;
+    }
+
+    // Outside active heist (scouting / escape): record directly into Die Akte
+    const target = TARGETS[draft.targetId] ?? TARGETS[s.activeTargetId];
+    const item = {
+      id: `ev_wit_${s.day}_${Date.now().toString(36)}`,
+      type: draft.type,
+      title: draft.title,
+      detail: draft.detail,
+      targetId: target.id,
+      targetName: target.name,
+      collectedOnDay: s.day,
+      severity: draft.severity,
+      mitigated: false,
+      relatedCrewId: draft.relatedCrewId,
+    };
+    set({
+      caseFile: appendEvidenceToCaseFile(s.caseFile, [item], target.name),
+    });
+    persistState(get());
   },
 
   issueRadioCommand: (command, targetCrewId = 'all') => {
@@ -1149,6 +1386,163 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ liveState: next });
   },
 
+  // ---- Tactile Minigames ----
+  startMinigame: (nodeId) => {
+    const s = get();
+    if (!s.liveState) return null;
+    const target = TARGETS[s.liveState.targetId];
+    const node = target.nodes.find((n) => n.id === nodeId);
+    if (!node) return null;
+    const mg = createMinigameForNode({
+      node,
+      member: s.crew.mara,
+      toolsById: TOOLS,
+      startedAtSec: s.liveState.elapsedSec,
+    });
+    set({
+      liveState: {
+        ...s.liveState,
+        activeMinigame: mg,
+      },
+    });
+    return mg;
+  },
+
+  attemptMinigameLockpick: (cursorValue) => {
+    const s = get();
+    const mg = s.liveState?.activeMinigame;
+    if (!s.liveState || !mg) {
+      return { hit: false, slipped: false, completed: false, failed: false };
+    }
+    const res = attemptLockpickPin(mg, cursorValue);
+    let nextLive = {
+      ...s.liveState,
+      activeMinigame: res.completed || res.failed ? null : res.game,
+    };
+
+    if (res.slipped) {
+      const target = TARGETS[nextLive.targetId];
+      const node = target.nodes.find((n) => n.id === mg.nodeId);
+      if (node) {
+        const cloned = structuredClone(nextLive);
+        pushNoisePulse(cloned, {
+          pos: node.pos,
+          floor: node.floor,
+          noiseDb: 68 + res.noiseDelta,
+          sourceCrewId: 'mara',
+          label: `Dietrich abgerutscht (${node.label})`,
+        });
+        nextLive = cloned;
+      }
+    }
+
+    if (res.completed) {
+      nextLive = playerInteractWithNode(
+        nextLive,
+        TARGETS[nextLive.targetId],
+        mg.nodeId,
+        {
+          clean: res.game.slips === 0,
+          noiseDelta: res.noiseDelta,
+          traceDelta: res.game.slips * 6,
+        }
+      );
+      nextLive.activeMinigame = null;
+    } else if (res.failed) {
+      nextLive = playerInteractWithNode(
+        nextLive,
+        TARGETS[nextLive.targetId],
+        mg.nodeId,
+        {
+          clean: false,
+          noiseDelta: 35,
+          traceDelta: 15,
+          trippedAlarm: false,
+          brokenGlass: mg.kind === 'lockpick',
+        }
+      );
+      nextLive.activeMinigame = null;
+    }
+
+    set({ liveState: nextLive });
+    return {
+      hit: res.hit,
+      slipped: res.slipped,
+      completed: res.completed,
+      failed: res.failed,
+    };
+  },
+
+  attemptMinigameCircuitWire: (wireId, action) => {
+    const s = get();
+    const mg = s.liveState?.activeMinigame;
+    if (!s.liveState || !mg) {
+      return {
+        correct: false,
+        trippedTamper: false,
+        completed: false,
+        failed: false,
+      };
+    }
+    const res = attemptCircuitWireAction(mg, wireId, action);
+    let nextLive = {
+      ...s.liveState,
+      activeMinigame: res.completed || res.failed ? null : res.game,
+    };
+
+    if (res.completed) {
+      nextLive = playerInteractWithNode(
+        nextLive,
+        TARGETS[nextLive.targetId],
+        mg.nodeId,
+        { clean: true, noiseDelta: 0 }
+      );
+      nextLive.activeMinigame = null;
+    } else if (res.trippedTamper || res.failed) {
+      nextLive = playerInteractWithNode(
+        nextLive,
+        TARGETS[nextLive.targetId],
+        mg.nodeId,
+        { trippedAlarm: true, noiseDelta: res.noiseDelta, traceDelta: res.traceDelta }
+      );
+      nextLive.activeMinigame = null;
+    }
+
+    set({ liveState: nextLive });
+    return {
+      correct: res.correct,
+      trippedTamper: res.trippedTamper,
+      completed: res.completed,
+      failed: res.failed,
+    };
+  },
+
+  autoCompleteActiveMinigame: () => {
+    const s = get();
+    const mg = s.liveState?.activeMinigame;
+    if (!s.liveState || !mg) return;
+    autoCompleteMinigame(mg);
+    const nextLive = playerInteractWithNode(
+      s.liveState,
+      TARGETS[s.liveState.targetId],
+      mg.nodeId,
+      { clean: true, noiseDelta: 8 }
+    );
+    nextLive.activeMinigame = null;
+    set({ liveState: nextLive });
+  },
+
+  cancelMinigame: () => {
+    const s = get();
+    if (!s.liveState) return;
+    set({
+      liveState: {
+        ...s.liveState,
+        activeMinigame: null,
+      },
+    });
+  },
+
   // ---- Escape & Debrief ----
   startEscape: () => {
     const s = get();
@@ -1162,9 +1556,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   updateEscapeState: (patch) => {
-    set((s) => ({
-      escapeState: s.escapeState ? { ...s.escapeState, ...patch } : null,
-    }));
+    set((s) => {
+      if (!s.escapeState) return { escapeState: null };
+      const merged: EscapeState = { ...s.escapeState, ...patch };
+      // Keep carDamage and vehicleDamage cleanly mirrored
+      if (patch.vehicleDamage !== undefined && patch.carDamage === undefined) {
+        merged.carDamage = patch.vehicleDamage;
+      } else if (patch.carDamage !== undefined && patch.vehicleDamage === undefined) {
+        merged.vehicleDamage = patch.carDamage;
+      }
+      return { escapeState: merged };
+    });
   },
 
   finishEscape: (escaped) => {
@@ -1184,9 +1586,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       live,
       escaped,
       escapeVehicleRecognized: s.escapeState?.vehicleRecognized ?? false,
+      escapePaintScrapeTrace: s.escapeState?.paintScrapeTrace ?? false,
       fence,
       crewById: s.crew,
       assignedCrewIds: plan.assignedCrewIds,
+      forensicLoadoutByCrew: plan.forensicLoadoutByCrew,
       caseFile: s.caseFile,
       day: s.day,
       completedTargetIds: s.completedTargetIds,
@@ -1197,7 +1601,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ? [...s.completedTargetIds, target.id]
         : s.completedTargetIds;
 
-    // Unlock story beat on success
     let storyBeats = s.storyBeats;
     if (debrief.storyBeatUnlockedId) {
       storyBeats = s.storyBeats.map((b) =>
@@ -1205,7 +1608,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       );
     }
 
-    // Advance next recommended target in Safehouse if current succeeded
     const nextIdx = TARGET_ORDER.indexOf(target.id) + 1;
     const nextActiveTargetId =
       debrief.success && nextIdx < TARGET_ORDER.length

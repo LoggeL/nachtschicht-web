@@ -1,9 +1,18 @@
 // ============================================================================
-// NACHTSCHICHT — Procedural Web Audio Sound Engine
-// Mediterranean Night Noir ambience, stealth footsteps, lockpicks, power-cut
-// hum drop, alarm siren, radio squelch, car engine pitch & police wail.
-// Unlocks cleanly on first user gesture and respects mute toggle.
+// NACHTSCHICHT — Round 2 Layered Procedural Web Audio Engine
+// Mediterranean coastal night ambience, surface-aware stealth footsteps,
+// tactile lockpick feedback, power-cut transformer drop, muffled guard radio
+// dispatch crackle, 5-speed RPM/gear engine harmonics, tire skid & Doppler siren.
 // ============================================================================
+
+export type FootstepSurface = 'asphalt' | 'stone' | 'marble' | 'metal' | 'wood';
+
+export interface EngineAudioTelemetry {
+  rpm?: number; // ~850..6800
+  gear?: number; // 1..5
+  throttle?: number; // 0..1
+  skidIntensity?: number; // 0..1
+}
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -11,6 +20,7 @@ export class AudioEngine {
   private ambienceGain: GainNode | null = null;
   private engineOsc: OscillatorNode | null = null;
   private engineSubOsc: OscillatorNode | null = null;
+  private engineFilter: BiquadFilterNode | null = null;
   private engineGain: GainNode | null = null;
   private driftGain: GainNode | null = null;
   private sirenOsc: OscillatorNode | null = null;
@@ -24,6 +34,7 @@ export class AudioEngine {
   private lastAlarmMs = 0;
   private lastScanTickMs = 0;
   private lastLockClickMs = 0;
+  private lastRadioCrackleMs = 0;
 
   private unlockHandler: () => void;
 
@@ -94,25 +105,25 @@ export class AudioEngine {
     ambGain.connect(master);
     this.ambienceGain = ambGain;
 
-    // Soft coastal night breeze / city rumble
+    // Soft coastal night breeze / distant surf
     const noise = ctx.createBufferSource();
     noise.buffer = this.createNoiseBuffer(ctx, 3);
     noise.loop = true;
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 260;
+    filter.frequency.value = 240;
 
     noise.connect(filter);
     filter.connect(ambGain);
     noise.start();
 
-    // Subtle deep midnight noir drone (D1 / A1 fifth)
+    // Subtle deep midnight noir drone (D1)
     const drone1 = ctx.createOscillator();
     drone1.type = 'sine';
     drone1.frequency.value = 55;
     const droneGain = ctx.createGain();
-    droneGain.gain.value = 0.08;
+    droneGain.gain.value = 0.07;
     drone1.connect(droneGain);
     droneGain.connect(ambGain);
     drone1.start();
@@ -125,8 +136,10 @@ export class AudioEngine {
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = 340;
+    filter.Q.value = 1.6;
     engGain.connect(filter);
     filter.connect(master);
+    this.engineFilter = filter;
 
     const osc = ctx.createOscillator();
     osc.type = 'sawtooth';
@@ -138,19 +151,19 @@ export class AudioEngine {
     sub.type = 'triangle';
     sub.frequency.value = 29;
     const subGain = ctx.createGain();
-    subGain.gain.value = 0.65;
+    subGain.gain.value = 0.72;
     sub.connect(subGain);
     subGain.connect(engGain);
     sub.start();
 
-    // Tire drift noise
+    // Wet tire drift screech/spray noise
     const driftNoise = ctx.createBufferSource();
     driftNoise.buffer = this.createNoiseBuffer(ctx, 2);
     driftNoise.loop = true;
     const bandpass = ctx.createBiquadFilter();
     bandpass.type = 'bandpass';
-    bandpass.frequency.value = 1350;
-    bandpass.Q.value = 2.6;
+    bandpass.frequency.value = 1420;
+    bandpass.Q.value = 2.8;
     const driftG = ctx.createGain();
     driftG.gain.value = 0;
     driftNoise.connect(bandpass);
@@ -201,27 +214,39 @@ export class AudioEngine {
     }
   }
 
-  public playFootstep(sneaking: boolean): void {
+  public playFootstep(sneaking: boolean, surface: FootstepSurface = 'asphalt'): void {
     if (!this.ctx || !this.masterGain || this.muted) return;
     const nowMs = performance.now();
-    const minInterval = sneaking ? 470 : 320;
+    const minInterval = sneaking ? 470 : 310;
     if (nowMs - this.lastFootstepMs < minInterval) return;
     this.lastFootstepMs = nowMs;
+
+    const surfaceFreq: Record<FootstepSurface, number> = {
+      asphalt: 132,
+      stone: 168,
+      marble: 245,
+      metal: 320,
+      wood: 145,
+    };
+    const baseFreq = surfaceFreq[surface] ?? 135;
 
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(sneaking ? 95 : 135 + Math.random() * 25, t);
-    osc.frequency.exponentialRampToValueAtTime(42, t + 0.06);
+    osc.type = surface === 'metal' || surface === 'marble' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(
+      (sneaking ? baseFreq * 0.72 : baseFreq) + Math.random() * 22,
+      t
+    );
+    osc.frequency.exponentialRampToValueAtTime(38, t + 0.065);
 
-    gain.gain.setValueAtTime(sneaking ? 0.05 : 0.11, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    gain.gain.setValueAtTime(sneaking ? 0.045 : 0.11, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.075);
 
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(t);
-    osc.stop(t + 0.08);
+    osc.stop(t + 0.085);
   }
 
   public playScanTick(progress: number): void {
@@ -265,20 +290,78 @@ export class AudioEngine {
   }
 
   public playLockpickClick(): void {
+    this.playLockpickFeedback('click');
+  }
+
+  public playLockpickFeedback(kind: 'click' | 'sweetspot' | 'slip' | 'unlock'): void {
     if (!this.ctx || !this.masterGain || this.muted) return;
     const nowMs = performance.now();
-    if (nowMs - this.lastLockClickMs < 240) return;
+    if (kind === 'click' && nowMs - this.lastLockClickMs < 220) return;
     this.lastLockClickMs = nowMs;
 
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(1400 + Math.random() * 600, t);
-    osc.frequency.exponentialRampToValueAtTime(380, t + 0.03);
-    gain.gain.setValueAtTime(0.06, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
+    if (kind === 'sweetspot') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1680, t);
+      osc.frequency.exponentialRampToValueAtTime(1120, t + 0.06);
+      gain.gain.setValueAtTime(0.1, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    } else if (kind === 'slip') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(240, t);
+      osc.frequency.exponentialRampToValueAtTime(75, t + 0.14);
+      gain.gain.setValueAtTime(0.16, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    } else if (kind === 'unlock') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(480, t);
+      osc.frequency.setValueAtTime(740, t + 0.06);
+      gain.gain.setValueAtTime(0.14, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    } else {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1400 + Math.random() * 550, t);
+      osc.frequency.exponentialRampToValueAtTime(380, t + 0.03);
+      gain.gain.setValueAtTime(0.06, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    }
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  }
+
+  public playGlassBreak(): void {
+    if (!this.ctx || !this.masterGain || this.muted) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.createNoiseBuffer(this.ctx, 0.35);
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2400;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.22, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+    src.connect(hp);
+    hp.connect(gain);
+    gain.connect(this.masterGain);
+    src.start(t);
+    src.stop(t + 0.34);
+  }
+
+  public playHeadlightSwitch(on: boolean): void {
+    if (!this.ctx || !this.masterGain || this.muted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(on ? 920 : 540, t);
+    gain.gain.setValueAtTime(0.07, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(t);
@@ -289,7 +372,6 @@ export class AudioEngine {
     if (!this.ctx || !this.masterGain || this.muted) return;
     const t = this.ctx.currentTime;
 
-    // Descending transformer hum drop
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sawtooth';
@@ -351,6 +433,49 @@ export class AudioEngine {
     });
   }
 
+  /** Muffled guard walkie-talkie dispatch crackle (interruptible radio window cue) */
+  public playGuardRadioCall(): void {
+    if (!this.ctx || !this.masterGain || this.muted) return;
+    const nowMs = performance.now();
+    if (nowMs - this.lastRadioCrackleMs < 1400) return;
+    this.lastRadioCrackleMs = nowMs;
+
+    const t = this.ctx.currentTime;
+    // Squelch noise burst
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.createNoiseBuffer(this.ctx, 0.24);
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1650;
+    bp.Q.value = 3.2;
+    const ng = this.ctx.createGain();
+    ng.gain.setValueAtTime(0.09, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    src.connect(bp);
+    bp.connect(ng);
+    ng.connect(this.masterGain);
+    src.start(t);
+    src.stop(t + 0.24);
+
+    // Muffled voice-band modulation pulse
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(210, t + 0.04);
+    osc.frequency.setValueAtTime(260, t + 0.12);
+    osc.frequency.setValueAtTime(185, t + 0.19);
+    const vbp = this.ctx.createBiquadFilter();
+    vbp.type = 'bandpass';
+    vbp.frequency.value = 950;
+    const vg = this.ctx.createGain();
+    vg.gain.setValueAtTime(0.06, t + 0.04);
+    vg.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    osc.connect(vbp);
+    vbp.connect(vg);
+    vg.connect(this.masterGain);
+    osc.start(t + 0.04);
+    osc.stop(t + 0.3);
+  }
+
   public playAlarmPulse(): void {
     if (!this.ctx || !this.masterGain || this.muted) return;
     const nowMs = performance.now();
@@ -395,7 +520,12 @@ export class AudioEngine {
     osc.stop(t + 0.19);
   }
 
-  public updateEngine(speedKmh: number, drifting: boolean, active: boolean): void {
+  public updateEngine(
+    speedKmh: number,
+    drifting: boolean,
+    active: boolean,
+    telemetry?: EngineAudioTelemetry
+  ): void {
     if (!this.ctx || !this.engineOsc || !this.engineSubOsc || !this.engineGain || !this.driftGain) {
       return;
     }
@@ -406,17 +536,67 @@ export class AudioEngine {
       return;
     }
 
-    const normSpeed = Math.min(1.3, Math.abs(speedKmh) / 110);
-    const freq = 56 + normSpeed * 125;
-    this.engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
-    this.engineSubOsc.frequency.setTargetAtTime(freq * 0.5, t, 0.05);
-    this.engineGain.gain.setTargetAtTime(0.08 + normSpeed * 0.08, t, 0.06);
+    const normRpm =
+      telemetry?.rpm !== undefined
+        ? Math.max(0, Math.min(1.25, (telemetry.rpm - 800) / 5600))
+        : Math.min(1.3, Math.abs(speedKmh) / 110);
+    const throttle = telemetry?.throttle ?? (Math.abs(speedKmh) > 5 ? 0.6 : 0.15);
 
-    const driftVol = drifting && Math.abs(speedKmh) > 25 ? 0.09 : 0;
-    this.driftGain.gain.setTargetAtTime(driftVol, t, 0.05);
+    const freq = 52 + normRpm * 145;
+    this.engineOsc.frequency.setTargetAtTime(freq, t, 0.045);
+    this.engineSubOsc.frequency.setTargetAtTime(freq * 0.5, t, 0.045);
+    if (this.engineFilter) {
+      this.engineFilter.frequency.setTargetAtTime(260 + normRpm * 520 + throttle * 240, t, 0.05);
+    }
+    this.engineGain.gain.setTargetAtTime(0.075 + normRpm * 0.07 + throttle * 0.04, t, 0.05);
+
+    const skid =
+      telemetry?.skidIntensity !== undefined
+        ? telemetry.skidIntensity
+        : drifting && Math.abs(speedKmh) > 25
+          ? 0.85
+          : 0;
+    this.driftGain.gain.setTargetAtTime(Math.min(0.14, skid * 0.12), t, 0.04);
   }
 
-  public updatePoliceSiren(proximity01: number, active: boolean, dt: number): void {
+  public updateEngineTelemetry(params: {
+    speedKmh: number;
+    rpm: number;
+    gear: number;
+    throttle: number;
+    skidIntensity: number;
+    active: boolean;
+  }): void {
+    this.updateEngine(params.speedKmh, params.skidIntensity > 0.25, params.active, {
+      rpm: params.rpm,
+      gear: params.gear,
+      throttle: params.throttle,
+      skidIntensity: params.skidIntensity,
+    });
+  }
+
+  public playGearShift(): void {
+    if (!this.ctx || !this.masterGain || this.muted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(165, t);
+    osc.frequency.exponentialRampToValueAtTime(68, t + 0.08);
+    gain.gain.setValueAtTime(0.08, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(t);
+    osc.stop(t + 0.095);
+  }
+
+  public updatePoliceSiren(
+    proximity01: number,
+    active: boolean,
+    dt: number,
+    dopplerShift = 1.0
+  ): void {
     if (!this.ctx || !this.sirenOsc || !this.sirenGain) return;
     const t = this.ctx.currentTime;
     if (!active || proximity01 <= 0.02 || this.muted) {
@@ -424,9 +604,9 @@ export class AudioEngine {
       return;
     }
     this.sirenPhase += dt * 3.8;
-    // European hi-lo police siren
     const hi = Math.sin(this.sirenPhase) > 0;
-    this.sirenOsc.frequency.setTargetAtTime(hi ? 820 : 620, t, 0.025);
+    const shift = Math.max(0.88, Math.min(1.14, dopplerShift));
+    this.sirenOsc.frequency.setTargetAtTime((hi ? 820 : 620) * shift, t, 0.025);
     this.sirenGain.gain.setTargetAtTime(proximity01 * 0.11, t, 0.06);
   }
 

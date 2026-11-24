@@ -1,5 +1,5 @@
 // ============================================================================
-// NACHTSCHICHT — Core Shared Simulation & Game Types
+// NACHTSCHICHT — Core Shared Simulation & Game Types (Round 2 Realism Ready)
 // Coordinate convention: Meters, right-handed Y-up (x = East, z = South on 2D
 // blueprint; 3D world position = (x, floor * floorHeightM, z)).
 // ============================================================================
@@ -12,6 +12,8 @@ export type GamePhase =
   | 'executing'
   | 'escape'
   | 'debrief';
+
+export type GraphicsQuality = 'ultra' | 'high' | 'medium';
 
 export type FloorId = -1 | 0 | 1 | 2;
 
@@ -38,6 +40,24 @@ export interface Bounds2D {
   maxX: number;
   minZ: number;
   maxZ: number;
+}
+
+// ----------------------------------------------------------------------------
+// Pathfinding Waypoints & Results (Shared by Reißbrett, Live Engine, 3D)
+// ----------------------------------------------------------------------------
+
+export interface PathWaypoint {
+  pos: Vec2;
+  floor: FloorId;
+  viaNodeId?: string;
+}
+
+export interface PathResult {
+  found: boolean;
+  waypoints: PathWaypoint[];
+  totalDistanceM: number;
+  floorTransitions: number;
+  blockedByLockedNodeIds: string[];
 }
 
 // ----------------------------------------------------------------------------
@@ -153,7 +173,9 @@ export type ToolId =
   | 'crowbar'
   | 'camera_loop'
   | 'disguise_kit'
-  | 'gloves';
+  | 'gloves'
+  | 'mask'
+  | 'dark_clothing';
 
 export type PropModelHint =
   | 'safe'
@@ -254,7 +276,7 @@ export interface HeistTarget {
 }
 
 // ----------------------------------------------------------------------------
-// Crew, Tools, Fences (Hehler), Workshop Upgrades
+// Crew, Forensic Loadout, Tools, Fences (Hehler), Workshop Upgrades
 // ----------------------------------------------------------------------------
 
 export type CrewId = 'mara' | 'jupp' | 'jule' | 'toni' | 'rico';
@@ -274,6 +296,17 @@ export interface CrewTraits {
   greed: number;
   /** 0..100 — high nerves = calm improvisation; low nerves = panic/noise */
   nerves: number;
+}
+
+export interface ForensicLoadout {
+  /** Nitril-Handschuhe: prevents fingerprints in Die Akte, slight +5% work time */
+  gloves: boolean;
+  /** Sturmhaube: blocks CCTV/witness facial ID, raises suspicion in public street zones */
+  mask: boolean;
+  /** Mattschwarze Kleidung: reduces stealth light exposure by 25% */
+  darkClothing: boolean;
+  /** Primary entry/vitrine approach: silent glass cutter vs lockpick vs loud fast crowbar */
+  entryTool: 'lockpick_set' | 'glass_cutter' | 'crowbar';
 }
 
 export interface LoyaltyQuest {
@@ -313,9 +346,9 @@ export interface ToolDef {
   category: 'entry' | 'electronics' | 'vault' | 'stealth' | 'mobility';
   costEur: number;
   description: string;
-  speedMultiplier: number; // < 1.0 speeds up action
-  noiseDelta: number; // negative reduces noise
-  traceDelta: number; // negative reduces trace risk
+  speedMultiplier: number;
+  noiseDelta: number;
+  traceDelta: number;
   applicableNodeKinds: NodeKind[];
   applicableSkills: SkillKey[];
 }
@@ -373,6 +406,8 @@ export interface ScoutingHudState {
   lastDiscoveryToast: string | null;
   playerPos: Vec2;
   playerFloor: FloorId;
+  /** Non-null when trying to scan through a solid wall */
+  blockedReason?: 'wall_occluded' | 'too_far' | 'wrong_floor' | null;
 }
 
 // ----------------------------------------------------------------------------
@@ -429,26 +464,22 @@ export interface ActionBlock {
   targetNodeId?: string;
   targetPos: Vec2;
   floor: FloorId;
-  /** Requested start time on the track (seconds) */
   startSec: number;
-  /** Calculated duration (seconds) */
   durationSec: number;
-  /** Resolved start after sequential & sync-barrier resolution */
   computedStartSec?: number;
-  /** Resolved end after sequential & sync-barrier resolution */
   computedEndSec?: number;
   estimatedNoise: number;
   estimatedTraceRisk: number;
   toolId?: ToolId;
+  /** Precomputed A* corridor path for this block */
+  pathWaypoints?: PathWaypoint[];
 }
 
 export interface SyncBarrier {
   id: string;
   label: string;
-  /** Prerequisite block that must finish first */
   fromBlockId: string;
   fromCrewId: CrewId;
-  /** Dependent block that waits for fromBlockId */
   toBlockId: string;
   toCrewId: CrewId;
 }
@@ -473,6 +504,8 @@ export interface HeistPlan {
   selectedFenceId: FenceId;
   vehiclePaintColor: string;
   totalDurationSec: number;
+  /** Per-crew forensic gear configuration (gloves, mask, dark clothing, entry tool) */
+  forensicLoadoutByCrew?: Partial<Record<CrewId, ForensicLoadout>>;
 }
 
 export type PlanIssueCode =
@@ -519,6 +552,8 @@ export interface RehearsalCrewGhost {
   spottedByGuardIds: string[];
   spottedByCameraIds: string[];
   trail: Array<{ pos: Vec2; floor: FloorId; t: number }>;
+  /** Full wall-respecting A* planned route for rendering on Das Reißbrett */
+  plannedPath?: PathWaypoint[];
 }
 
 export interface RehearsalGuardGhost {
@@ -555,6 +590,15 @@ export interface RehearsalConflict {
   floor: FloorId;
 }
 
+export interface RehearsalNoiseRing {
+  pos: Vec2;
+  floor: FloorId;
+  radiusM: number;
+  noiseLevel: number;
+  crewId: CrewId;
+  label: string;
+}
+
 export interface RehearsalSnapshot {
   timeSec: number;
   totalDurationSec: number;
@@ -568,10 +612,65 @@ export interface RehearsalSnapshot {
   cameras: RehearsalCameraGhost[];
   conflicts: RehearsalConflict[];
   unscoutedWarningCount: number;
+  /** Illumination 0..1 per roomId at `timeSec` (updates when power is cut!) */
+  roomLightLevels: Record<string, number>;
+  /** Active acoustic noise radii for Reißbrett visualization */
+  noiseRings: RehearsalNoiseRing[];
 }
 
 // ----------------------------------------------------------------------------
-// Live Execution & Escape
+// Tactile Heist Minigames (Lockpicking, Safe Dial, Securion Circuit Bypass)
+// ----------------------------------------------------------------------------
+
+export type MinigameKind = 'lockpick' | 'safe_dial' | 'securion_circuit';
+
+export interface LockpickPin {
+  index: number;
+  sweetSpot: number; // 0..100
+  tolerance: number; // +/- width
+  solved: boolean;
+}
+
+export interface CircuitWire {
+  id: string;
+  label: string;
+  color: string;
+  role: 'sensor_loop' | 'tamper_backup' | 'decoy' | 'power_feed';
+  actionRequired: 'cut' | 'bridge' | 'leave';
+  resolved: boolean;
+  tripped: boolean;
+}
+
+export interface ActiveMinigame {
+  id: string;
+  kind: MinigameKind;
+  nodeId: string;
+  nodeLabel: string;
+  difficulty: number;
+  crewId: CrewId;
+  startedAtSec: number;
+  pins?: LockpickPin[];
+  activePinIndex?: number;
+  tension?: number;
+  wires?: CircuitWire[];
+  securionModel?: string;
+  schematicHint?: string;
+  slips: number;
+  maxSlips: number;
+  status: 'active' | 'success' | 'failed';
+}
+
+export interface InteractOutcome {
+  clean?: boolean;
+  noiseDelta?: number;
+  traceDelta?: number;
+  trippedAlarm?: boolean;
+  usedTool?: ToolId;
+  brokenGlass?: boolean;
+}
+
+// ----------------------------------------------------------------------------
+// Live Execution, Positional Noise, Guard AI States & Escape Telemetry
 // ----------------------------------------------------------------------------
 
 export type RadioCommandType = 'hold' | 'plan_b' | 'abort' | 'resume';
@@ -613,6 +712,52 @@ export interface CollectedLootItem {
   collectedBy: CrewId;
 }
 
+export interface NoisePulse {
+  id: string;
+  pos: Vec2;
+  floor: FloorId;
+  radiusM: number;
+  noiseDb: number; // 20..110 dB
+  emittedAtSec: number;
+  sourceCrewId?: CrewId;
+  label: string;
+}
+
+export type GuardAIState =
+  | 'patrol'
+  | 'suspicious'
+  | 'investigating'
+  | 'radioing'
+  | 'pursuit'
+  | 'searching'
+  | 'alerted'
+  | 'chasing';
+
+export type GuardInvestigateReason =
+  | 'sight'
+  | 'noise'
+  | 'door'
+  | 'power'
+  | 'loot'
+  | 'glass';
+
+export interface StealthTelemetry {
+  /** 0..1 continuous illumination on player (0 = dark shadow, 1 = spotlight) */
+  lightExposure: number;
+  /** Current acoustic noise in decibels (20..110 dB) */
+  noiseDb: number;
+  /** Peak suspicion 0..100 across all active guards/cameras */
+  highestSuspicion: number;
+  /** World-space bearing degrees from player toward highest threat (null if silent) */
+  suspicionSourceAngle: number | null;
+  suspicionGuardId: string | null;
+  guardState: GuardAIState | null;
+  /** Remaining seconds before a radioing guard completes dispatch (interrupt window!) */
+  radioInterruptWindowSec: number | null;
+  /** Speed penalty 0..0.35 caused by heavy loot bags */
+  carryWeightPenalty: number;
+}
+
 export interface LiveCrewState {
   crewId: CrewId;
   pos: Vec2;
@@ -641,6 +786,12 @@ export interface LiveCrewState {
   usingPlanB: boolean;
   deviationActive: DeviationKind | null;
   extraLootTargetNodeId: string | null;
+  /** Active A* path waypoints currently being followed */
+  activePath?: PathWaypoint[];
+  activePathIndex?: number;
+  activePathGoalKey?: string;
+  /** 0..0.35 carry slowdown factor from loot */
+  carryWeightPenalty?: number;
 }
 
 export interface LiveGuardState {
@@ -652,10 +803,21 @@ export interface LiveGuardState {
   visionRange: number;
   visionConeDeg: number;
   suspicion: number; // 0..100
-  state: 'patrol' | 'investigating' | 'alerted' | 'chasing';
+  state: GuardAIState;
   investigatePos?: Vec2;
+  investigateReason?: GuardInvestigateReason;
   waypointIndex: number;
   pauseRemainingSec: number;
+  /** 0..1 progress through interruptible radio dispatch */
+  radioProgress?: number;
+  radioDurationSec?: number;
+  calloutText?: string;
+  flashlightOn?: boolean;
+  lastKnownTargetPos?: Vec2;
+  searchRemainingSec?: number;
+  noticedAnomalyIds?: string[];
+  pathWaypoints?: PathWaypoint[];
+  pathIndex?: number;
 }
 
 export interface LiveCameraState {
@@ -704,6 +866,15 @@ export interface LiveExecutionState {
   holdActive: boolean;
   completedNodeIds: string[];
   triggeredHazardNodeIds: string[];
+  /** Persistent physical world state noticed by guards & 3D doors/props */
+  unlockedDoorIds: string[];
+  openedContainerIds: string[];
+  brokenGlassNodes: string[];
+  powerCutRooms: string[];
+  roomLightLevels: Record<string, number>;
+  noiseEvents: NoisePulse[];
+  stealthTelemetry: StealthTelemetry;
+  activeMinigame: ActiveMinigame | null;
   collectedLoot: CollectedLootItem[];
   totalLootEur: number;
   crew: Record<CrewId, LiveCrewState>;
@@ -715,7 +886,6 @@ export interface LiveExecutionState {
   readyForEscape: boolean;
   compromised: boolean;
   violenceUsed: boolean;
-  /** Seeded deterministic RNG state for repeatable live simulation */
   rngState: number;
 }
 
@@ -731,6 +901,19 @@ export interface EscapeState {
   vehicleRecognized: boolean;
   escaped: boolean;
   busted: boolean;
+  // Round 2 Driving & Pursuit Telemetry (@driving-sim + @ui)
+  gear?: number; // -1 = R, 0 = N, 1..5
+  rpm?: number; // 850..7200
+  throttle?: number; // 0..1
+  headlightsOn?: boolean;
+  isDrifting?: boolean;
+  skidIntensity?: number; // 0..1
+  policeLosCooldown?: number; // 0..1 normalized cooldown bar
+  policeStatus?: 'dispatched' | 'pursuit' | 'searching' | 'evaded';
+  policeDispatchEtaSec?: number;
+  safehouseLocked?: boolean;
+  vehicleDamage?: number; // synced with carDamage (0..100)
+  paintScrapeTrace?: boolean;
 }
 
 // ----------------------------------------------------------------------------

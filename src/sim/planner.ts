@@ -3,9 +3,12 @@ import {
   ActionType,
   CrewId,
   CrewMember,
+  FloorId,
+  ForensicLoadout,
   HeistPlan,
   HeistTarget,
   IntelState,
+  PathWaypoint,
   PlanBBranch,
   PlanValidationIssue,
   ResolvedPlan,
@@ -16,18 +19,39 @@ import {
   ToolId,
   Vec2,
 } from './types';
+import { findTargetPath } from './pathfinding';
 
 // ============================================================================
-// Pure-TS Heist Planner: Duration Calculation, DAG Validation, Sync Barriers
+// Pure-TS Heist Planner: A* Travel Time, Forensic Gear Metrics, DAG Validation
 // ============================================================================
 
 const BASE_WALK_SPEED_MPS = 2.6;
-const FLOOR_TRANSITION_PENALTY_SEC = 4.0;
+const FLOOR_TRANSITION_PENALTY_SEC = 3.2;
 
 export function distance2D(a: Vec2, b: Vec2): number {
   const dx = b.x - a.x;
   const dz = b.z - a.z;
   return Math.hypot(dx, dz);
+}
+
+export function getEffectiveForensicLoadout(
+  plan: HeistPlan | undefined,
+  member: CrewMember
+): ForensicLoadout {
+  const custom = plan?.forensicLoadoutByCrew?.[member.id];
+  if (custom) return custom;
+  const entryTool: ForensicLoadout['entryTool'] =
+    member.equippedTools.includes('glass_cutter')
+      ? 'glass_cutter'
+      : member.equippedTools.includes('crowbar')
+        ? 'crowbar'
+        : 'lockpick_set';
+  return {
+    gloves: member.equippedTools.includes('gloves'),
+    mask: member.equippedTools.includes('mask'),
+    darkClothing: member.equippedTools.includes('dark_clothing'),
+    entryTool,
+  };
 }
 
 export function inferSkillForAction(
@@ -59,16 +83,34 @@ export function findBestToolForAction(
   type: ActionType,
   node: TargetNode | undefined,
   toolsById: Record<ToolId, ToolDef>,
-  explicitToolId?: ToolId
+  explicitToolId?: ToolId,
+  forensic?: ForensicLoadout
 ): ToolDef | undefined {
-  const candidates = explicitToolId
-    ? [explicitToolId]
-    : member.equippedTools;
+  // Prefer forensic entry tool selection on doors/windows/vitrines if not overridden
+  if (
+    !explicitToolId &&
+    forensic &&
+    node &&
+    (node.kind === 'entry_window' ||
+      node.kind === 'entry_service' ||
+      node.kind === 'entry_door' ||
+      node.kind === 'entry_cellar' ||
+      node.kind === 'loot_case')
+  ) {
+    const entryDef = toolsById[forensic.entryTool];
+    if (entryDef && entryDef.applicableNodeKinds.includes(node.kind)) {
+      return entryDef;
+    }
+  }
+
+  const candidates = explicitToolId ? [explicitToolId] : member.equippedTools;
 
   let best: ToolDef | undefined;
   for (const tid of candidates) {
     const def = toolsById[tid];
     if (!def) continue;
+    // Passive stealth gear handled separately
+    if (tid === 'gloves' || tid === 'mask' || tid === 'dark_clothing') continue;
     const skill = inferSkillForAction(type, node);
     const matchesNode = node ? def.applicableNodeKinds.includes(node.kind) : false;
     const matchesSkill = skill ? def.applicableSkills.includes(skill) : false;
@@ -87,28 +129,32 @@ export interface ActionEstimate {
   estimatedNoise: number;
   estimatedTraceRisk: number;
   usedToolId?: ToolId;
+  pathWaypoints?: PathWaypoint[];
 }
 
 /**
- * Calculates deterministic action duration, noise, and forensic trace risk
- * from crew skill, equipped tool, node difficulty, and travel distance.
+ * Calculates deterministic action duration, noise, forensic trace risk, and
+ * wall-respecting A* corridor path from crew skill, forensic gear, and node difficulty.
  */
 export function calculateActionMetrics(params: {
   type: ActionType;
   member: CrewMember;
   node?: TargetNode;
+  target?: HeistTarget;
   fromPos?: Vec2;
-  fromFloor?: number;
+  fromFloor?: FloorId;
   targetPos: Vec2;
-  targetFloor: number;
+  targetFloor: FloorId;
   toolsById: Record<ToolId, ToolDef>;
   explicitToolId?: ToolId;
   requestedDurationSec?: number;
+  forensic?: ForensicLoadout;
 }): ActionEstimate {
   const {
     type,
     member,
     node,
+    target,
     fromPos,
     fromFloor,
     targetPos,
@@ -116,22 +162,44 @@ export function calculateActionMetrics(params: {
     toolsById,
     explicitToolId,
     requestedDurationSec,
+    forensic,
   } = params;
 
-  const travelDist = fromPos ? distance2D(fromPos, targetPos) : 0;
-  const floorDiff =
-    fromFloor !== undefined ? Math.abs(targetFloor - fromFloor) : 0;
+  let travelDist = fromPos ? distance2D(fromPos, targetPos) : 0;
+  let floorDiff = fromFloor !== undefined ? Math.abs(targetFloor - fromFloor) : 0;
+  let pathWaypoints: PathWaypoint[] | undefined;
+
+  if (target && fromPos && fromFloor !== undefined) {
+    const pathRes = findTargetPath(
+      target,
+      fromPos,
+      fromFloor,
+      targetPos,
+      targetFloor,
+      { respectLockedDoors: false }
+    );
+    travelDist = pathRes.totalDistanceM;
+    floorDiff = pathRes.floorTransitions;
+    pathWaypoints = pathRes.waypoints;
+  }
+
   const speedBonus = 1 + (member.skills.climbing - 5) * 0.03;
   const travelSec =
     travelDist / (BASE_WALK_SPEED_MPS * Math.max(0.75, speedBonus)) +
     floorDiff * FLOOR_TRANSITION_PENALTY_SEC;
 
+  const darkNoiseDelta = forensic?.darkClothing ? -5 : 0;
+
   if (type === 'move' || type === 'extract') {
-    const dur = Math.max(2.5, Math.round((travelSec + (type === 'extract' ? 1.5 : 0.5)) * 10) / 10);
+    const dur = Math.max(
+      2.5,
+      Math.round((travelSec + (type === 'extract' ? 1.5 : 0.5)) * 10) / 10
+    );
     return {
       durationSec: dur,
-      estimatedNoise: type === 'extract' ? 18 : 10,
+      estimatedNoise: Math.max(4, (type === 'extract' ? 18 : 10) + darkNoiseDelta),
       estimatedTraceRisk: 4,
+      pathWaypoints,
     };
   }
 
@@ -141,6 +209,7 @@ export function calculateActionMetrics(params: {
       durationSec: Math.round(dur * 10) / 10,
       estimatedNoise: 3,
       estimatedTraceRisk: 2,
+      pathWaypoints,
     };
   }
 
@@ -151,6 +220,7 @@ export function calculateActionMetrics(params: {
       durationSec: Math.round((travelSec * 0.5 + workSec) * 10) / 10,
       estimatedNoise: Math.max(15, 38 - drivingSkill * 2),
       estimatedTraceRisk: Math.max(8, 28 - drivingSkill * 2),
+      pathWaypoints,
     };
   }
 
@@ -159,24 +229,49 @@ export function calculateActionMetrics(params: {
   const skillKey = inferSkillForAction(type, node);
   const skillVal = skillKey ? member.skills[skillKey] : 5;
 
-  // Higher skill reduces duration; difficult nodes take longer for low skill
   const skillRatio = Math.max(0.45, Math.min(2.1, 1 + (difficulty - skillVal) * 0.12));
 
-  const tool = findBestToolForAction(member, type, node, toolsById, explicitToolId);
+  const tool = findBestToolForAction(
+    member,
+    type,
+    node,
+    toolsById,
+    explicitToolId,
+    forensic
+  );
   const toolSpeed = tool ? tool.speedMultiplier : 1.0;
 
-  // Gloves always reduce forensic trace risk if carried
-  const hasGloves = member.equippedTools.includes('gloves');
-  const glovesTraceDelta = hasGloves ? (toolsById.gloves?.traceDelta ?? -35) : 0;
+  const hasGloves = forensic ? forensic.gloves : member.equippedTools.includes('gloves');
+  const hasMask = forensic ? forensic.mask : member.equippedTools.includes('mask');
+  // Wearing gloves prevents fingerprints (-38 trace) with a realistic slight tactile speed cost (+5%)
+  const glovesSpeedMod = hasGloves ? 1.05 : 1.0;
+  const glovesTraceDelta = hasGloves ? (toolsById.gloves?.traceDelta ?? -38) : 14;
+  const maskTraceDelta = hasMask ? -10 : 8;
 
-  const workSec = Math.max(2.0, baseWork * skillRatio * toolSpeed);
+  const workSec = Math.max(2.0, baseWork * skillRatio * toolSpeed * glovesSpeedMod);
   const totalSec = Math.round((travelSec + workSec) * 10) / 10;
+
+  // Crowbar on glass display cases or windows shatters glass loudly!
+  const crowbarGlassSpike =
+    tool?.id === 'crowbar' &&
+    (node?.kind === 'loot_case' || node?.kind === 'entry_window')
+      ? 26
+      : 0;
 
   const baseNoise = node?.noiseLevel ?? 25;
   const noiseSkillMod = (5 - skillVal) * 3;
   const estimatedNoise = Math.max(
     0,
-    Math.min(100, Math.round(baseNoise + noiseSkillMod + (tool?.noiseDelta ?? 0)))
+    Math.min(
+      100,
+      Math.round(
+        baseNoise +
+          noiseSkillMod +
+          (tool?.noiseDelta ?? 0) +
+          crowbarGlassSpike +
+          darkNoiseDelta
+      )
+    )
   );
 
   const baseTrace = node?.traceRisk ?? 22;
@@ -189,7 +284,8 @@ export function calculateActionMetrics(params: {
         baseTrace +
           traceSkillMod +
           (tool?.traceDelta ?? 0) +
-          (tool?.id === 'gloves' ? 0 : glovesTraceDelta)
+          glovesTraceDelta +
+          maskTraceDelta
       )
     )
   );
@@ -199,13 +295,13 @@ export function calculateActionMetrics(params: {
     estimatedNoise,
     estimatedTraceRisk,
     usedToolId: tool?.id,
+    pathWaypoints,
   };
 }
 
 /**
- * Resolves a HeistPlan into deterministic start/end times for every ActionBlock,
- * respecting per-crew track sequencing and cross-track SyncBarriers.
- * Detects cycles (DAG validation) and surfaces tactical warnings.
+ * Resolves a HeistPlan into deterministic start/end times and A* corridor paths
+ * for every ActionBlock, respecting per-crew sequencing and SyncBarriers.
  */
 export function resolvePlan(params: {
   plan: HeistPlan;
@@ -220,7 +316,6 @@ export function resolvePlan(params: {
 
   const issues: PlanValidationIssue[] = [];
 
-  // Group blocks by crew sorted by requested startSec (stable order)
   const orderedByCrew: Record<string, ActionBlock[]> = {};
   for (const cid of plan.assignedCrewIds) {
     orderedByCrew[cid] = [];
@@ -248,12 +343,13 @@ export function resolvePlan(params: {
     orderedByCrew[cid].sort((a, b) => a.startSec - b.startSec);
   }
 
-  // Recompute durations/noise/trace along each crew member's actual path
+  // Recompute durations/noise/trace + real A* corridor paths along each crew member's route
   for (const cid of Object.keys(orderedByCrew)) {
     const member = crewById[cid as CrewId];
     if (!member) continue;
+    const forensic = getEffectiveForensicLoadout(plan, member);
     let prevPos: Vec2 = { ...target.getawayPos };
-    let prevFloor: number = 0;
+    let prevFloor: FloorId = 0;
 
     for (const block of orderedByCrew[cid]) {
       const node = block.targetNodeId ? nodesById[block.targetNodeId] : undefined;
@@ -261,6 +357,7 @@ export function resolvePlan(params: {
         type: block.type,
         member,
         node,
+        target,
         fromPos: prevPos,
         fromFloor: prevFloor,
         targetPos: block.targetPos,
@@ -268,10 +365,12 @@ export function resolvePlan(params: {
         toolsById,
         explicitToolId: block.toolId,
         requestedDurationSec: block.durationSec,
+        forensic,
       });
       block.durationSec = metrics.durationSec;
       block.estimatedNoise = metrics.estimatedNoise;
       block.estimatedTraceRisk = metrics.estimatedTraceRisk;
+      block.pathWaypoints = metrics.pathWaypoints;
       if (!block.toolId && metrics.usedToolId) {
         block.toolId = metrics.usedToolId;
       }
@@ -280,9 +379,7 @@ export function resolvePlan(params: {
     }
   }
 
-  // Build DAG edges:
-  // 1) Sequential track edges: block[i-1] -> block[i] for same crew member
-  // 2) SyncBarrier edges: fromBlockId -> toBlockId
+  // Build DAG edges: track sequence + cross-track SyncBarriers
   const deps: Record<string, string[]> = {};
   const dependents: Record<string, string[]> = {};
   const inDegree: Record<string, number> = {};
@@ -330,7 +427,7 @@ export function resolvePlan(params: {
     addEdge(sb.fromBlockId, sb.toBlockId);
   }
 
-  // Kahn's topological sort for DAG scheduling & cycle detection
+  // Kahn's topological sort
   const queue: string[] = [];
   for (const id of Object.keys(inDegree)) {
     if (inDegree[id] === 0) queue.push(id);
@@ -363,7 +460,6 @@ export function resolvePlan(params: {
     }
   }
 
-  // Compute start/end times in topological order (fallback to requested for cycle nodes)
   const visited = new Set<string>(topoOrder);
   const fullOrder = [
     ...topoOrder,
@@ -387,7 +483,6 @@ export function resolvePlan(params: {
     }
   }
 
-  // Tactical checks (warnings / info — non-blocking)
   const hasLootAction = Object.values(rawById).some(
     (b) => b.type === 'grab_loot' || b.type === 'crack_safe'
   );
@@ -408,7 +503,6 @@ export function resolvePlan(params: {
     });
   }
 
-  // Check if alarm-linked safe is opened before alarm bypass completes
   const alarmBypassEndByNode: Record<string, number> = {};
   for (const b of Object.values(rawById)) {
     if (b.type === 'bypass_alarm' && b.targetNodeId && b.computedEndSec !== undefined) {
@@ -437,7 +531,7 @@ export function resolvePlan(params: {
       issues.push({
         severity: 'warning',
         code: 'HIGH_NOISE',
-        message: `Hoher Lärmpegel (${b.estimatedNoise}) bei „${b.label}“ — Wachen in der Nähe könnten aufmerksam werden.`,
+        message: `Hoher Lärmpegel (${b.estimatedNoise}) bei „${b.label}“ — Wachen in der Nähe werden aufmerksam.`,
         blockId: b.id,
         crewId: b.crewId,
       });
@@ -470,9 +564,6 @@ export function resolvePlan(params: {
   };
 }
 
-/**
- * Checks whether adding a sync barrier from -> to would introduce a cycle.
- */
 export function wouldSyncCreateCycle(
   plan: HeistPlan,
   fromBlockId: string,
@@ -500,7 +591,6 @@ export function wouldSyncCreateCycle(
   }
   pushEdge(fromBlockId, toBlockId);
 
-  // BFS from toBlockId to see if we can reach fromBlockId
   const seen = new Set<string>([toBlockId]);
   const stack = [toBlockId];
   while (stack.length > 0) {
@@ -516,9 +606,6 @@ export function wouldSyncCreateCycle(
   return false;
 }
 
-/**
- * Selects the matching Plan B fallback branch for a crew member given a trigger.
- */
 export function selectPlanBBranch(
   plan: HeistPlan,
   crewId: CrewId,
@@ -533,9 +620,6 @@ export function selectPlanBBranch(
   );
 }
 
-/**
- * Helper to create a well-formed default ActionBlock when clicking a node on the Reißbrett.
- */
 export function inferActionTypeForNode(node: TargetNode): ActionType {
   switch (node.kind) {
     case 'entry_door':

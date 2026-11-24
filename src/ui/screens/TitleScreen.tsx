@@ -5,6 +5,7 @@ import {
   Play,
   RotateCcw,
   ShieldAlert,
+  Sliders,
   Sparkles,
   Volume2,
   VolumeX,
@@ -12,17 +13,26 @@ import {
 } from 'lucide-react';
 import { useGameStore } from '../../state/store';
 import { TARGET_ORDER, TARGETS } from '../../sim/data';
+import { GraphicsQuality } from '../../sim/types';
 import { formatEur, getImageUrl, useAssetManifest } from '../assets';
+
+const QUALITY_OPTIONS: Array<{ id: GraphicsQuality; label: string }> = [
+  { id: 'ultra', label: 'Ultra' },
+  { id: 'high', label: 'Hoch' },
+  { id: 'medium', label: 'Mittel' },
+];
 
 export function TitleScreen() {
   const hasSavedGame = useGameStore((s) => s.hasSavedGame);
   const day = useGameStore((s) => s.day);
   const bankrollEur = useGameStore((s) => s.bankrollEur);
   const completedTargetIds = useGameStore((s) => s.completedTargetIds);
+  const graphicsQuality = useGameStore((s) => s.graphicsQuality);
   const audioMuted = useGameStore((s) => s.audioMuted);
   const startNewCampaign = useGameStore((s) => s.startNewCampaign);
   const continueCampaign = useGameStore((s) => s.continueCampaign);
   const quickPlayTarget = useGameStore((s) => s.quickPlayTarget);
+  const setGraphicsQuality = useGameStore((s) => s.setGraphicsQuality);
   const resetSave = useGameStore((s) => s.resetSave);
   const toggleAudioMuted = useGameStore((s) => s.toggleAudioMuted);
 
@@ -33,21 +43,22 @@ export function TitleScreen() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 text-slate-100 select-none">
-      {/* Fullscreen Hero Backdrop */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Fullscreen 35mm Cinema Hero Backdrop */}
+      <div className="absolute inset-0 overflow-hidden cinema-vignette">
         {!heroError ? (
           <img
             src={heroUrl}
             alt="Salou bei Nacht — Nachtschicht"
             onError={() => setHeroError(true)}
-            className="w-full h-full object-cover animate-ken-burns opacity-90"
+            className="w-full h-full object-cover animate-ken-burns opacity-95 contrast-[1.04]"
           />
         ) : (
           <div className="w-full h-full blueprint-surface" />
         )}
-        {/* Mediterranean Night Noir directional vignettes preserving right-side scenery */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#050a15]/95 via-[#060d1c]/70 to-[#060d1c]/25" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050a15] via-transparent to-[#050a15]/55" />
+        <div className="absolute inset-0 cinema-scanlines pointer-events-none" />
+        {/* Prestige Night-Thriller directional vignettes preserving coastal cinematography */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#040812]/95 via-[#050b18]/68 to-[#050b18]/18" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#040812] via-transparent to-[#040812]/50" />
       </div>
 
       {/* Content Layer */}
@@ -55,7 +66,7 @@ export function TitleScreen() {
         {/* Top Metadata Strip */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 border border-sky-400/35 text-sky-200 font-mono-tech text-xs tracking-widest uppercase">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/75 border border-sky-400/35 text-sky-200 font-mono-tech text-xs tracking-widest uppercase backdrop-blur">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
               COSTA DAURADA · SALOU / DRESDEN
             </span>
@@ -65,6 +76,28 @@ export function TitleScreen() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Graphics Quality Switcher */}
+            <div
+              className="flex items-center gap-0.5 bg-slate-950/80 backdrop-blur border border-slate-700/75 rounded-lg p-0.5"
+              title="3D-Grafikqualität"
+            >
+              <Sliders className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-1" />
+              {QUALITY_OPTIONS.map((q) => (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => setGraphicsQuality(q.id)}
+                  className={`px-2 py-1 rounded font-mono-tech text-[11px] font-semibold transition-colors cursor-pointer ${
+                    graphicsQuality === q.id
+                      ? 'bg-sky-400 text-slate-950'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
+
             {hasSavedGame && (
               <button
                 type="button"

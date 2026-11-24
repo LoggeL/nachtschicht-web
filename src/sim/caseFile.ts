@@ -9,13 +9,14 @@ import {
   EvidenceDraft,
   EvidenceItem,
   FenceDef,
+  ForensicLoadout,
   HeistDebrief,
   HeistTarget,
   LiveExecutionState,
 } from './types';
 
 // ============================================================================
-// Die Akte „Nachtschicht“ (Inspectora Núria Ferrer) + Hehler & Loyalty Ledger
+// Die Akte „Nachtschicht“ (Inspectora Núria Ferrer) + Hehler & Forensic Ledger
 // ============================================================================
 
 export function computeCaseStatus(heat: number): CaseFileStatus {
@@ -79,41 +80,72 @@ export function createInitialCaseFile(): CaseFileLedger {
 
 /**
  * Generates persistent EvidenceItems for Die Akte from a finished LiveExecutionState
- * and escape outcome. Clean ghost runs produce almost zero evidence; alarms,
- * camera sightings, missing gloves, recognized getaway cars, or violence spike Die Akte!
+ * and escape outcome, respecting forensic loadout choices (gloves, mask, crowbar glass break,
+ * vehicle paint-scrape transfer).
  */
 export function generateEvidenceFromHeist(params: {
   target: HeistTarget;
   live: LiveExecutionState;
   escapeVehicleRecognized: boolean;
+  escapePaintScrapeTrace?: boolean;
   escaped: boolean;
   day: number;
   fence: FenceDef;
   crewById: Record<CrewId, CrewMember>;
   assignedCrewIds: CrewId[];
+  forensicLoadoutByCrew?: Partial<Record<CrewId, ForensicLoadout>>;
 }): EvidenceItem[] {
   const {
     target,
     live,
     escapeVehicleRecognized,
+    escapePaintScrapeTrace = false,
     escaped,
     day,
     fence,
     crewById,
     assignedCrewIds,
+    forensicLoadoutByCrew,
   } = params;
 
-  const drafts: EvidenceDraft[] = [...live.pendingEvidence];
-  const seenTypes = new Set(drafts.map((d) => `${d.type}:${d.relatedCrewId ?? ''}`));
+  const drafts: EvidenceDraft[] = live.pendingEvidence.map((d) => {
+    // Adjust camera_footage / witness facial ID severity if mask was worn vs bare face!
+    if (
+      (d.type === 'camera_footage' || d.type === 'witness') &&
+      d.relatedCrewId
+    ) {
+      const member = crewById[d.relatedCrewId];
+      const loadout = forensicLoadoutByCrew?.[d.relatedCrewId];
+      const hasMask = loadout
+        ? loadout.mask
+        : Boolean(member?.equippedTools.includes('mask'));
+      if (hasMask) {
+        return {
+          ...d,
+          title: `${d.title} (Vermummt)`,
+          detail: `${d.detail} Sturmhaube verhinderte eindeutige Gesichtserkennung.`,
+          severity: Math.max(7, Math.round(d.severity * 0.6)),
+        };
+      }
+      return {
+        ...d,
+        title: `${d.title} — Gesicht erfasst!`,
+        detail: `${d.detail} Ohne Sturmhaube — biometrischer Abgleich in der Akte!`,
+        severity: Math.min(26, Math.round(d.severity * 1.35)),
+      };
+    }
+    return d;
+  });
+
+  const seenTypes = new Set(drafts.map((d) => `${d.type}:${d.relatedCrewId ?? ''}:${d.title}`));
 
   const addDraft = (draft: EvidenceDraft) => {
-    const key = `${draft.type}:${draft.relatedCrewId ?? ''}`;
+    const key = `${draft.type}:${draft.relatedCrewId ?? ''}:${draft.title}`;
     if (seenTypes.has(key)) return;
     seenTypes.add(key);
     drafts.push(draft);
   };
 
-  // Alarm signature
   if (live.alarmLevel === 'alarm' || live.alarmLevel === 'lockdown') {
     addDraft({
       type: 'alarm_signature',
@@ -125,7 +157,6 @@ export function generateEvidenceFromHeist(params: {
     });
   }
 
-  // Recognized getaway car
   if (escapeVehicleRecognized || live.alarmLevel === 'lockdown') {
     addDraft({
       type: 'recognized_car',
@@ -136,21 +167,48 @@ export function generateEvidenceFromHeist(params: {
     });
   }
 
-  // Missing gloves -> fingerprints on high-trace nodes
+  // Hard wall/curb impact during escape leaves automotive paint transfer trace (@driving-sim)
+  if (escapePaintScrapeTrace) {
+    addDraft({
+      type: 'recognized_car',
+      title: 'Lackspuren an Mauer/Bordstein',
+      detail: `Spurensicherung fand frischen Fahrzeuglack an der Fluchtroute in ${target.city}.`,
+      targetId: target.id,
+      severity: 9,
+    });
+  }
+
+  // Shattered glass from crowbar or forced entry leaves clear toolmarks
+  if (live.brokenGlassNodes && live.brokenGlassNodes.length > 0) {
+    addDraft({
+      type: 'alarm_signature',
+      title: `Gewaltsamer Glasbruch (${live.brokenGlassNodes.length}×)`,
+      detail:
+        'Brecheisen-Abdrücke und zersplittertes Sicherheitsglas belegen rohe Gewalt am Tatort.',
+      targetId: target.id,
+      severity: Math.min(18, 8 + live.brokenGlassNodes.length * 4),
+    });
+  }
+
+  // Missing gloves -> fingerprints on locks/vitrines/safes
   for (const cid of assignedCrewIds) {
     const member = crewById[cid];
     if (!member) continue;
-    if (!member.equippedTools.includes('gloves') && live.completedNodeIds.length > 0) {
+    const loadout = forensicLoadoutByCrew?.[cid];
+    const hasGloves = loadout
+      ? loadout.gloves
+      : member.equippedTools.includes('gloves');
+
+    if (!hasGloves && live.completedNodeIds.length > 0) {
       addDraft({
         type: 'fingerprints',
         title: `Teil-Fingerabdrücke (${member.codename})`,
         detail: `${member.name} arbeitete ohne Handschuhe an Schlössern oder Vitrinen in ${target.name}.`,
         targetId: target.id,
-        severity: 10,
+        severity: 12,
         relatedCrewId: cid,
       });
     }
-    // Low-loyalty chatter
     if (member.traits.loyalty < 45 && !member.isPlayerControlled) {
       addDraft({
         type: 'crew_chatter',
@@ -163,7 +221,6 @@ export function generateEvidenceFromHeist(params: {
     }
   }
 
-  // Violence dramatically spikes Die Akte (per concept: "Gewalt ist möglich, aber teuer")
   if (live.violenceUsed) {
     addDraft({
       type: 'violence_report',
@@ -175,7 +232,6 @@ export function generateEvidenceFromHeist(params: {
     });
   }
 
-  // Fence heat
   if (fence.heatGenerated > 0 && live.totalLootEur > 0) {
     addDraft({
       type: 'witness',
@@ -186,7 +242,6 @@ export function generateEvidenceFromHeist(params: {
     });
   }
 
-  // Failed escape -> major witness/arrest trace
   if (!escaped) {
     addDraft({
       type: 'witness',
@@ -227,10 +282,6 @@ export function appendEvidenceToCaseFile(
   };
 }
 
-/**
- * Applies a playable countermeasure (Wagen umlackieren, Untertauchen, etc.)
- * to mitigate matching evidence items and reduce Inspectora Ferrer's heat.
- */
 export function applyCountermeasureToCaseFile(
   caseFile: CaseFileLedger,
   cm: CountermeasureDef,
@@ -276,9 +327,6 @@ export function applyCountermeasureToCaseFile(
   };
 }
 
-/**
- * Computes fence payout based on preferred loot categories vs base rate.
- */
 export function calculateFencePayout(
   loot: CollectedLootItem[],
   fence: FenceDef
@@ -295,17 +343,13 @@ export function calculateFencePayout(
   return { grossEur, payoutEur };
 }
 
-/**
- * Determines which non-player accomplice has the lowest loyalty for the Act 3
- * traitor reveal (Lars's concept: "der Komplize mit der niedrigsten Loyalität").
- */
 export function findAct3TraitorCandidate(
   crew: Record<CrewId, CrewMember>
 ): CrewId | undefined {
   const candidates = Object.values(crew).filter(
     (c) =>
       !c.isPlayerControlled &&
-      c.id !== 'jupp' && // Jupp gets arrested in Act 3; one of the other recruited accomplices is bought by Lassen
+      c.id !== 'jupp' &&
       c.recruited &&
       c.status === 'available'
   );
@@ -314,17 +358,16 @@ export function findAct3TraitorCandidate(
   return candidates[0].id;
 }
 
-/**
- * Builds the full HeistDebrief payload and computes crew cuts, XP, and loyalty changes.
- */
 export function settleHeistDebrief(params: {
   target: HeistTarget;
   live: LiveExecutionState;
   escaped: boolean;
   escapeVehicleRecognized: boolean;
+  escapePaintScrapeTrace?: boolean;
   fence: FenceDef;
   crewById: Record<CrewId, CrewMember>;
   assignedCrewIds: CrewId[];
+  forensicLoadoutByCrew?: Partial<Record<CrewId, ForensicLoadout>>;
   caseFile: CaseFileLedger;
   day: number;
   completedTargetIds: HeistTarget['id'][];
@@ -338,9 +381,11 @@ export function settleHeistDebrief(params: {
     live,
     escaped,
     escapeVehicleRecognized,
+    escapePaintScrapeTrace = false,
     fence,
     crewById,
     assignedCrewIds,
+    forensicLoadoutByCrew,
     caseFile,
     day,
     completedTargetIds,
@@ -354,7 +399,6 @@ export function settleHeistDebrief(params: {
     success ? live.collectedLoot : [],
     fence
   );
-  // Clean ghost run earns a 12% clean-merchandise premium from the fence
   const fencePayoutEur = cleanGhostBonus
     ? Math.round(basePayout * 1.12)
     : basePayout;
@@ -389,7 +433,6 @@ export function settleHeistDebrief(params: {
     const newLevel = 1 + Math.floor(newXp / 200);
     const leveledUp = newLevel > member.level;
 
-    // Slight skill growth on level up
     const newSkills = { ...member.skills };
     if (leveledUp) {
       const topSkill = (Object.keys(newSkills) as Array<keyof typeof newSkills>).sort(
@@ -406,10 +449,7 @@ export function settleHeistDebrief(params: {
       skills: newSkills,
       traits: {
         ...member.traits,
-        loyalty: Math.max(
-          0,
-          Math.min(100, member.traits.loyalty + loyaltyDelta)
-        ),
+        loyalty: Math.max(0, Math.min(100, member.traits.loyalty + loyaltyDelta)),
       },
     };
 
@@ -431,11 +471,13 @@ export function settleHeistDebrief(params: {
     target,
     live,
     escapeVehicleRecognized,
+    escapePaintScrapeTrace,
     escaped,
     day,
     fence,
     crewById: updatedCrew,
     assignedCrewIds,
+    forensicLoadoutByCrew,
   });
 
   const updatedCaseFile = appendEvidenceToCaseFile(
@@ -444,7 +486,6 @@ export function settleHeistDebrief(params: {
     target.name
   );
 
-  // Act 3 traitor reveal happens upon completing Villa Mirador (target 3)
   let traitorRevealedId: CrewId | undefined;
   if (
     success &&

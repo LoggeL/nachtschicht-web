@@ -6,6 +6,16 @@ export interface AssetManifest {
   style: string;
   images: Record<string, string>;
   textures: Record<string, string>;
+  environments?: Record<string, string>;
+  pbrSets?: Record<
+    string,
+    {
+      albedo: string;
+      normal: string;
+      roughness: string;
+      ao: string;
+    }
+  >;
   assets: Record<
     string,
     {
@@ -18,37 +28,62 @@ export interface AssetManifest {
   >;
 }
 
+const ASSET_CACHE_VERSION = 2;
+
+function appendVersion(url: string, version = ASSET_CACHE_VERSION): string {
+  if (!url || url.includes('?')) return url;
+  return `${url}?v=${version}`;
+}
+
 const DEFAULT_IMAGES: Record<string, string> = {
-  title_salou_night: '/assets/images/title_salou_night.webp',
-  portrait_mara: '/assets/images/portrait_mara.webp',
-  portrait_jupp: '/assets/images/portrait_jupp.webp',
-  portrait_jule: '/assets/images/portrait_jule.webp',
-  portrait_toni: '/assets/images/portrait_toni.webp',
-  portrait_rico: '/assets/images/portrait_rico.webp',
-  portrait_ferrer: '/assets/images/portrait_ferrer.webp',
-  portrait_lassen: '/assets/images/portrait_lassen.webp',
-  story_bar_salou: '/assets/images/story_bar_salou.webp',
-  story_dresden_vault: '/assets/images/story_dresden_vault.webp',
+  title_salou_night: '/assets/images/title_salou_night.webp?v=2',
+  portrait_mara: '/assets/images/portrait_mara.webp?v=2',
+  portrait_jupp: '/assets/images/portrait_jupp.webp?v=2',
+  portrait_jule: '/assets/images/portrait_jule.webp?v=2',
+  portrait_toni: '/assets/images/portrait_toni.webp?v=2',
+  portrait_rico: '/assets/images/portrait_rico.webp?v=2',
+  portrait_ferrer: '/assets/images/portrait_ferrer.webp?v=2',
+  portrait_lassen: '/assets/images/portrait_lassen.webp?v=2',
+  story_bar_salou: '/assets/images/story_bar_salou.webp?v=2',
+  story_dresden_vault: '/assets/images/story_dresden_vault.webp?v=2',
 };
 
 const DEFAULT_TEXTURES: Record<string, string> = {
-  salou_stucco: '/assets/textures/salou_stucco.webp',
-  wet_asphalt: '/assets/textures/wet_asphalt.webp',
-  stone_plaza: '/assets/textures/stone_plaza.webp',
-  blueprint_paper: '/assets/textures/blueprint_paper.webp',
+  salou_stucco: '/assets/textures/salou_stucco.webp?v=2',
+  wet_asphalt: '/assets/textures/wet_asphalt.webp?v=2',
+  stone_plaza: '/assets/textures/stone_plaza.webp?v=2',
+  blueprint_paper: '/assets/textures/blueprint_paper.webp?v=2',
 };
 
 let cachedManifest: AssetManifest | null = null;
 let manifestPromise: Promise<AssetManifest | null> | null = null;
 
+function versionRecord(
+  map: Record<string, string>,
+  version: number
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(map)) {
+    out[k] = appendVersion(v, version);
+  }
+  return out;
+}
+
 export function loadAssetManifest(): Promise<AssetManifest | null> {
   if (cachedManifest) return Promise.resolve(cachedManifest);
   if (!manifestPromise) {
-    manifestPromise = fetch('/assets/images/manifest.json')
+    manifestPromise = fetch(`/assets/images/manifest.json?v=${ASSET_CACHE_VERSION}`)
       .then((res) => (res.ok ? (res.json() as Promise<AssetManifest>) : null))
       .then((data) => {
-        if (data) cachedManifest = data;
-        return data;
+        if (data) {
+          const ver = data.version || ASSET_CACHE_VERSION;
+          cachedManifest = {
+            ...data,
+            images: versionRecord(data.images ?? {}, ver),
+            textures: versionRecord(data.textures ?? {}, ver),
+          };
+        }
+        return cachedManifest;
       })
       .catch(() => null);
   }
@@ -82,7 +117,9 @@ export function useAssetManifest(): {
 }
 
 export function getImageUrl(key: string, images?: Record<string, string>): string {
-  return images?.[key] ?? DEFAULT_IMAGES[key] ?? `/assets/images/${key}.webp`;
+  const resolved =
+    images?.[key] ?? DEFAULT_IMAGES[key] ?? `/assets/images/${key}.webp`;
+  return appendVersion(resolved, cachedManifest?.version ?? ASSET_CACHE_VERSION);
 }
 
 // ============================================================================

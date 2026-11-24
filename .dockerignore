@@ -9,6 +9,8 @@ coverage
 .env.*
 *.log
 *.tsbuildinfo
+__pycache__
+*.pyc
 .DS_Store
 docs
 tools

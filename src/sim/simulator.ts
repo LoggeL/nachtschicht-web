@@ -5,10 +5,12 @@ import {
   GuardPatrol,
   HeistTarget,
   IntelState,
+  PathWaypoint,
   RehearsalCameraGhost,
   RehearsalConflict,
   RehearsalCrewGhost,
   RehearsalGuardGhost,
+  RehearsalNoiseRing,
   RehearsalSnapshot,
   ResolvedPlan,
   TargetNode,
@@ -16,11 +18,19 @@ import {
   WallSegment,
 } from './types';
 import { distance2D } from './planner';
+import {
+  computeRoomLightLevels,
+  findTargetPath,
+  hasSolidLineOfSight,
+  sampleAlongWaypoints,
+  sampleLightExposureAt,
+} from './pathfinding';
 
 // ============================================================================
 // Deterministic Ghost-Rehearsal Simulator (Probelauf am Reißbrett)
-// Strictly respects Fog-of-War (`IntelState`): unknown guards, cameras, and
-// hidden traps CANNOT be predicted by the rehearsal!
+// Round 2: Uses real wall-respecting multi-floor A* paths, room lighting
+// preview (blackout overlay), and acoustic noise radius rings — while
+// strictly respecting Fog-of-War (`IntelState`).
 // ============================================================================
 
 export function normalizeAngleDeg(deg: number): number {
@@ -43,47 +53,16 @@ export function headingBetween(from: Vec2, to: Vec2): number {
   return normalizeAngleDeg((Math.atan2(dz, dx) * 180) / Math.PI);
 }
 
-/** 2D segment intersection test for solid wall Line-of-Sight occlusion */
-function segmentsIntersect(
-  ax: number,
-  az: number,
-  bx: number,
-  bz: number,
-  cx: number,
-  cz: number,
-  dx: number,
-  dz: number
-): boolean {
-  const ccw = (p1x: number, p1z: number, p2x: number, p2z: number, p3x: number, p3z: number) =>
-    (p3z - p1z) * (p2x - p1x) > (p2z - p1z) * (p3x - p1x);
-  return (
-    ccw(ax, az, cx, cz, dx, dz) !== ccw(bx, bz, cx, cz, dx, dz) &&
-    ccw(ax, az, bx, bz, cx, cz) !== ccw(ax, az, bx, bz, dx, dz)
-  );
-}
-
 export function hasLineOfSight(
   from: Vec2,
   to: Vec2,
   floor: FloorId,
   walls: WallSegment[]
 ): boolean {
-  for (const w of walls) {
-    if (w.floor !== floor) continue;
-    // Glass and fences allow vision through them
-    if (w.kind === 'glass' || w.kind === 'fence') continue;
-    if (segmentsIntersect(from.x, from.z, to.x, to.z, w.x1, w.z1, w.x2, w.z2)) {
-      return false;
-    }
-  }
-  return true;
+  return hasSolidLineOfSight(from, to, floor, walls);
 }
 
-export function findRoomAt(
-  target: HeistTarget,
-  pos: Vec2,
-  floor: FloorId
-) {
+export function findRoomAt(target: HeistTarget, pos: Vec2, floor: FloorId) {
   return target.rooms.find(
     (r) =>
       r.floor === floor &&
@@ -123,9 +102,6 @@ export function isPointInVisionCone(params: {
   return hasLineOfSight(observerPos, targetPos, observerFloor, walls);
 }
 
-/**
- * Deterministically samples a guard's position & facing angle at any timestamp `t`.
- */
 export function sampleGuardAtTime(
   guard: GuardPatrol,
   timeSec: number
@@ -142,7 +118,6 @@ export function sampleGuardAtTime(
     };
   }
 
-  // Compute segment durations (pause at wp[i], then walk wp[i] -> wp[(i+1)%n])
   interface Segment {
     pauseStart: number;
     walkStart: number;
@@ -197,9 +172,6 @@ export function sampleGuardAtTime(
   };
 }
 
-/**
- * Deterministically samples a security camera's sweep heading at timestamp `t`.
- */
 export function sampleCameraHeading(node: TargetNode, timeSec: number): number {
   const base = node.cameraHeadingDeg ?? 0;
   const sweep = node.cameraSweepDeg ?? 60;
@@ -209,21 +181,43 @@ export function sampleCameraHeading(node: TargetNode, timeSec: number): number {
 }
 
 /**
- * Samples a single crew member's ghost position, active block, and trail at time `t`.
+ * Samples a single crew member's ghost along wall-respecting A* corridor paths.
  */
 function sampleCrewTrackAtTime(
   crewId: CrewId,
   blocks: ActionBlock[],
-  startPos: Vec2,
+  target: HeistTarget,
   timeSec: number,
   nodesById: Record<string, TargetNode>
 ): RehearsalCrewGhost {
+  const startPos = target.getawayPos;
   let prevPos: Vec2 = { ...startPos };
   let prevFloor: FloorId = 0;
   let carryingLootEur = 0;
+
   const trail: Array<{ pos: Vec2; floor: FloorId; t: number }> = [
     { pos: { ...startPos }, floor: 0, t: 0 },
   ];
+  const fullPlannedPath: PathWaypoint[] = [{ pos: { ...startPos }, floor: 0 }];
+
+  // Precompute full A* route for blueprint rendering even beyond `timeSec`
+  let routePrevPos: Vec2 = { ...startPos };
+  let routePrevFloor: FloorId = 0;
+  const blockPaths: PathWaypoint[][] = [];
+  for (const b of blocks) {
+    const wps =
+      b.pathWaypoints && b.pathWaypoints.length >= 2
+        ? b.pathWaypoints
+        : findTargetPath(target, routePrevPos, routePrevFloor, b.targetPos, b.floor, {
+            respectLockedDoors: false,
+          }).waypoints;
+    blockPaths.push(wps);
+    for (let i = 1; i < wps.length; i++) {
+      fullPlannedPath.push(wps[i]);
+    }
+    routePrevPos = { ...b.targetPos };
+    routePrevFloor = b.floor;
+  }
 
   let pos: Vec2 = { ...startPos };
   let floor: FloorId = 0;
@@ -233,15 +227,19 @@ function sampleCrewTrackAtTime(
   let activeActionLabel = 'Bereit am Fluchtwagen';
   let progress = 0;
 
-  for (const b of blocks) {
+  for (let idx = 0; idx < blocks.length; idx++) {
+    const b = blocks[idx];
+    const wps = blockPaths[idx];
     const bStart = b.computedStartSec ?? b.startSec;
     const bEnd = b.computedEndSec ?? bStart + b.durationSec;
 
     if (timeSec < bStart) {
-      // Waiting at prevPos for either scheduled time or sync barrier
       pos = { ...prevPos };
       floor = prevFloor;
-      headingDeg = headingBetween(prevPos, b.targetPos);
+      headingDeg =
+        wps.length >= 2
+          ? headingBetween(wps[0].pos, wps[1].pos)
+          : headingBetween(prevPos, b.targetPos);
       status = bStart > b.startSec ? 'waiting_sync' : 'idle';
       activeBlockId = null;
       activeActionLabel =
@@ -257,34 +255,48 @@ function sampleCrewTrackAtTime(
       const dur = Math.max(0.1, bEnd - bStart);
       progress = Math.min(1, Math.max(0, elapsed / dur));
 
-      // Travel occupies up to first 40% of a work block (or 100% of move/extract)
       const isPureMove = b.type === 'move' || b.type === 'extract';
-      const travelFraction = isPureMove ? 1.0 : 0.35;
+      const travelFraction = isPureMove ? 1.0 : 0.38;
 
-      if (progress <= travelFraction && distance2D(prevPos, b.targetPos) > 0.1) {
+      if (progress <= travelFraction && wps.length >= 2) {
         const u = Math.min(1, progress / travelFraction);
-        pos = {
-          x: prevPos.x + (b.targetPos.x - prevPos.x) * u,
-          z: prevPos.z + (b.targetPos.z - prevPos.z) * u,
-        };
-        floor = u < 0.5 ? prevFloor : b.floor;
-        headingDeg = headingBetween(prevPos, b.targetPos);
+        const sampled = sampleAlongWaypoints(wps, u);
+        pos = sampled.pos;
+        floor = sampled.floor;
+        headingDeg = sampled.headingDeg;
         status = 'moving';
+
+        // Append intermediate A* corridor vertices reached so far to trail!
+        const reachedCount = Math.max(1, Math.floor(u * (wps.length - 1)));
+        for (let k = 1; k < reachedCount; k++) {
+          trail.push({ pos: { ...wps[k].pos }, floor: wps[k].floor, t: bStart + elapsed * (k / wps.length) });
+        }
+        trail.push({ pos: { ...pos }, floor, t: timeSec });
       } else {
+        for (let k = 1; k < wps.length; k++) {
+          trail.push({ pos: { ...wps[k].pos }, floor: wps[k].floor, t: bStart + dur * travelFraction });
+        }
         pos = { ...b.targetPos };
         floor = b.floor;
-        headingDeg = headingBetween(prevPos, b.targetPos);
-        status = isPureMove && b.type === 'extract' && progress >= 0.99 ? 'extracted' : 'working';
+        headingDeg =
+          wps.length >= 2
+            ? headingBetween(wps[wps.length - 2].pos, wps[wps.length - 1].pos)
+            : headingBetween(prevPos, b.targetPos);
+        status =
+          isPureMove && b.type === 'extract' && progress >= 0.99
+            ? 'extracted'
+            : 'working';
       }
 
       activeBlockId = b.id;
       activeActionLabel = b.label;
-      trail.push({ pos: { ...pos }, floor, t: timeSec });
       break;
     }
 
-    // Block completed prior to timeSec
-    trail.push({ pos: { ...b.targetPos }, floor: b.floor, t: bEnd });
+    // Completed block — append full A* waypoints so trail follows corridors!
+    for (let k = 1; k < wps.length; k++) {
+      trail.push({ pos: { ...wps[k].pos }, floor: wps[k].floor, t: bEnd });
+    }
     prevPos = { ...b.targetPos };
     prevFloor = b.floor;
     pos = { ...prevPos };
@@ -321,11 +333,12 @@ function sampleCrewTrackAtTime(
     spottedByGuardIds: [],
     spottedByCameraIds: [],
     trail,
+    plannedPath: fullPlannedPath,
   };
 }
 
 /**
- * Generates a complete deterministic RehearsalSnapshot at timestamp `timeSec`
+ * Generates a deterministic RehearsalSnapshot at timestamp `timeSec`
  * using ONLY what the player has scouted in `IntelState`.
  */
 export function simulateRehearsalAt(params: {
@@ -341,7 +354,6 @@ export function simulateRehearsalAt(params: {
   const nodesById: Record<string, TargetNode> = {};
   for (const n of target.nodes) nodesById[n.id] = n;
 
-  // Determine which nodes/states have completed by `timeSec`
   let powerDisabled = false;
   let alarmBypassed = false;
   const disabledPowerIds = new Set<string>();
@@ -373,16 +385,36 @@ export function simulateRehearsalAt(params: {
     }
   }
 
-  // Sample crew ghosts
+  const roomLightLevels = computeRoomLightLevels(target, powerDisabled);
+
   const crew: RehearsalCrewGhost[] = resolvedPlan.plan.assignedCrewIds.map((cid) =>
     sampleCrewTrackAtTime(
       cid,
       resolvedPlan.orderedBlocksByCrew[cid] ?? [],
-      target.getawayPos,
+      target,
       timeSec,
       nodesById
     )
   );
+
+  // Active noise radius rings for crew currently working on noisy actions
+  const noiseRings: RehearsalNoiseRing[] = [];
+  for (const ghost of crew) {
+    if (ghost.status === 'working' && ghost.activeBlockId) {
+      const blk = resolvedPlan.blocksById[ghost.activeBlockId];
+      if (blk && blk.estimatedNoise >= 18) {
+        const radiusM = Math.round((2.2 + (blk.estimatedNoise / 100) * 11.5) * 10) / 10;
+        noiseRings.push({
+          pos: { ...ghost.pos },
+          floor: ghost.floor,
+          radiusM,
+          noiseLevel: blk.estimatedNoise,
+          crewId: ghost.crewId,
+          label: blk.label,
+        });
+      }
+    }
+  }
 
   // Sample ONLY known guards (Fog of War!)
   const guards: RehearsalGuardGhost[] = [];
@@ -425,11 +457,9 @@ export function simulateRehearsalAt(params: {
     });
   }
 
-  // Evaluate sightline conflicts at `timeSec` against known guards & cameras
   const conflicts: RehearsalConflict[] = [];
   for (const ghost of crew) {
     if (ghost.status === 'extracted') continue;
-    // Skip street getaway zone detection when just starting/finished
     if (distance2D(ghost.pos, target.getawayPos) < 1.2 && ghost.status === 'idle') {
       continue;
     }
@@ -438,23 +468,32 @@ export function simulateRehearsalAt(params: {
     const activeBlock = ghost.activeBlockId
       ? resolvedPlan.blocksById[ghost.activeBlockId]
       : undefined;
+    const forensic = resolvedPlan.plan.forensicLoadoutByCrew?.[ghost.crewId];
     const doingOvertCrime =
       ghost.status === 'working' &&
       activeBlock?.type !== 'lookout' &&
       activeBlock?.type !== 'wait' &&
       activeBlock?.type !== 'stage_car';
+    const wearingMaskInPublic =
+      ghostRoom?.securityZone === 'public' && Boolean(forensic?.mask);
     const actingInPublic =
       ghostRoom?.securityZone === 'public' &&
       !doingOvertCrime &&
+      !wearingMaskInPublic &&
       ghost.carryingLootEur === 0;
+
+    const lightExp = sampleLightExposureAt(
+      target,
+      ghost.pos,
+      ghost.floor,
+      roomLightLevels,
+      { darkClothing: Boolean(forensic?.darkClothing) }
+    );
+    const lightRangeFactor = 0.42 + lightExp * 0.68;
 
     for (const guard of guards) {
       if (actingInPublic) continue;
-      const inDarkenedInterior =
-        powerDisabled && ghostRoom?.securityZone !== 'public';
-      const effectiveRange = inDarkenedInterior
-        ? guard.visionRange * 0.48
-        : guard.visionRange;
+      const effectiveRange = guard.visionRange * lightRangeFactor;
       if (
         isPointInVisionCone({
           observerPos: guard.pos,
@@ -512,10 +551,10 @@ export function simulateRehearsalAt(params: {
     }
   }
 
-  // Check if any KNOWN hidden trap is crossed while still powered
+  // Known hidden traps (Fog of War enforced)
   for (const n of target.nodes) {
     if (!n.isHiddenHazard) continue;
-    if (!intel.discoveredNodeIds.includes(n.id)) continue; // Fog of War!
+    if (!intel.discoveredNodeIds.includes(n.id)) continue;
     const disarmedByPower =
       (n.poweredByNodeId ? disabledPowerIds.has(n.poweredByNodeId) : false) ||
       powerDisabled;
@@ -536,7 +575,6 @@ export function simulateRehearsalAt(params: {
     }
   }
 
-  // Count how many actual dangers are STILL hidden by Fog of War
   const unscoutedGuards = target.guards.filter(
     (g) => !g.visibleFromStreet && !intel.timedGuardIds.includes(g.id)
   ).length;
@@ -560,13 +598,11 @@ export function simulateRehearsalAt(params: {
     cameras,
     conflicts,
     unscoutedWarningCount: unscoutedGuards + unscoutedHazards,
+    roomLightLevels,
+    noiseRings,
   };
 }
 
-/**
- * Scans the entire timeline in fixed steps (e.g., 1s) to pre-compute all known
- * conflicts for timeline scrubber markers.
- */
 export function scanRehearsalConflicts(params: {
   resolvedPlan: ResolvedPlan;
   target: HeistTarget;

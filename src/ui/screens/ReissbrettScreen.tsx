@@ -4,16 +4,21 @@ import {
   ArrowLeft,
   CheckCircle2,
   Compass,
+  EyeOff,
+  Fingerprint,
   GitBranch,
   Layers,
   Link2,
+  Moon,
   Play,
   Plus,
+  Radio,
   ShieldAlert,
   Sparkles,
   Trash2,
   Volume2,
   VolumeX,
+  Wrench,
 } from 'lucide-react';
 import { useGameStore } from '../../state/store';
 import { TARGETS, TOOLS } from '../../sim/data';
@@ -22,6 +27,7 @@ import {
   ACTION_TYPE_LABELS,
   CrewId,
   FLOOR_LABELS,
+  ForensicLoadout,
   PlanBFallbackAction,
   PlanBTrigger,
   SKILL_LABELS,
@@ -37,7 +43,37 @@ import { BlueprintFloorplan } from '../components/BlueprintFloorplan';
 import { TimelineDAW } from '../components/TimelineDAW';
 import { CharacterAvatar } from '../components/CharacterAvatar';
 
-type InspectorTab = 'inspect' | 'sync' | 'planb';
+type InspectorTab = 'inspect' | 'forensic' | 'sync' | 'planb';
+
+const ENTRY_TOOL_OPTIONS: Array<{
+  id: ForensicLoadout['entryTool'];
+  label: string;
+  noiseHint: string;
+  speedHint: string;
+  traceHint: string;
+}> = [
+  {
+    id: 'lockpick_set',
+    label: 'Dietrich',
+    noiseHint: 'Leise (~5m)',
+    speedHint: 'Standard',
+    traceHint: 'Niedrig',
+  },
+  {
+    id: 'glass_cutter',
+    label: 'Glasschneider',
+    noiseHint: 'Flüsterleise (~3.5m)',
+    speedHint: 'Präzise',
+    traceHint: 'Minimal',
+  },
+  {
+    id: 'crowbar',
+    label: 'Brecheisen',
+    noiseHint: 'Laut (~14m!)',
+    speedHint: 'Sehr schnell',
+    traceHint: 'Hoch + Glasbruch',
+  },
+];
 
 export function ReissbrettScreen() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('inspect');
@@ -46,6 +82,8 @@ export function ReissbrettScreen() {
   const [syncSourceBlockId, setSyncSourceBlockId] = useState<string | null>(null);
   const [syncFromDropdown, setSyncFromDropdown] = useState<string>('');
   const [syncToDropdown, setSyncToDropdown] = useState<string>('');
+  const [showLightOverlay, setShowLightOverlay] = useState<boolean>(false);
+  const [showNoiseOverlay, setShowNoiseOverlay] = useState<boolean>(true);
   const [syncFeedback, setSyncFeedback] = useState<{ ok: boolean; msg: string } | null>(
     null
   );
@@ -59,7 +97,6 @@ export function ReissbrettScreen() {
   const selectedCrewId = useGameStore((s) => s.selectedCrewId);
   const rehearsalTimeSec = useGameStore((s) => s.rehearsalTimeSec);
   const rehearsalPlaying = useGameStore((s) => s.rehearsalPlaying);
-  const rehearsalSpeed = useGameStore((s) => s.rehearsalSpeed);
   const audioMuted = useGameStore((s) => s.audioMuted);
 
   const getResolvedPlan = useGameStore((s) => s.getResolvedPlan);
@@ -67,6 +104,7 @@ export function ReissbrettScreen() {
   const setPhase = useGameStore((s) => s.setPhase);
   const setSelectedFloor = useGameStore((s) => s.setSelectedFloor);
   const setSelectedCrewId = useGameStore((s) => s.setSelectedCrewId);
+  const setCrewForensicLoadout = useGameStore((s) => s.setCrewForensicLoadout);
   const loadStarterPlan = useGameStore((s) => s.loadStarterPlan);
   const addPlanBlock = useGameStore((s) => s.addPlanBlock);
   const updatePlanBlock = useGameStore((s) => s.updatePlanBlock);
@@ -76,8 +114,6 @@ export function ReissbrettScreen() {
   const setPlanBBranch = useGameStore((s) => s.setPlanBBranch);
   const removePlanBBranch = useGameStore((s) => s.removePlanBBranch);
   const buyTargetBlueprints = useGameStore((s) => s.buyTargetBlueprints);
-  const setRehearsalTime = useGameStore((s) => s.setRehearsalTime);
-  const setRehearsalPlaying = useGameStore((s) => s.setRehearsalPlaying);
   const launchHeist = useGameStore((s) => s.launchHeist);
   const toggleAudioMuted = useGameStore((s) => s.toggleAudioMuted);
 
@@ -159,6 +195,77 @@ export function ReissbrettScreen() {
     ? resolvedPlan.blocksById[selectedBlockId] ?? null
     : null;
 
+  const selectedMember = crew[selectedCrewId];
+  const currentForensic: ForensicLoadout = useMemo(() => {
+    const stored = rawPlan.forensicLoadoutByCrew?.[selectedCrewId];
+    if (stored) return stored;
+    const tools = selectedMember?.equippedTools ?? [];
+    return {
+      gloves: tools.includes('gloves'),
+      mask: tools.includes('mask'),
+      darkClothing: tools.includes('dark_clothing'),
+      entryTool: tools.includes('crowbar')
+        ? 'crowbar'
+        : tools.includes('glass_cutter')
+          ? 'glass_cutter'
+          : 'lockpick_set',
+    };
+  }, [rawPlan.forensicLoadoutByCrew, selectedCrewId, selectedMember]);
+
+  // Compute live preview noise radius for selected node/block reflecting forensic entry tool
+  const previewNoiseRing = useMemo(() => {
+    const toolMod =
+      currentForensic.entryTool === 'crowbar'
+        ? 22
+        : currentForensic.entryTool === 'glass_cutter'
+          ? -14
+          : -8;
+
+    if (selectedBlock) {
+      const effNoise = Math.max(12, Math.min(100, selectedBlock.estimatedNoise + (selectedBlock.type === 'enter' || selectedBlock.type === 'grab_loot' ? toolMod * 0.4 : 0)));
+      return {
+        pos: selectedBlock.targetPos,
+        floor: selectedBlock.floor,
+        radiusM: Math.max(2.5, Math.min(16, (effNoise / 100) * 14 + 2)),
+        label: `Lärm-Radius (${selectedBlock.label})`,
+      };
+    }
+    if (selectedNode) {
+      const effNoise = Math.max(10, Math.min(100, selectedNode.noiseLevel + toolMod));
+      return {
+        pos: selectedNode.pos,
+        floor: selectedNode.floor,
+        radiusM: Math.max(2.5, Math.min(16, (effNoise / 100) * 14 + 2)),
+        label:
+          currentForensic.entryTool === 'crowbar'
+            ? 'Brecheisen-Lärm'
+            : currentForensic.entryTool === 'glass_cutter'
+              ? 'Glasschneider'
+              : 'Dietrich',
+      };
+    }
+    return null;
+  }, [selectedBlock, selectedNode, currentForensic.entryTool]);
+
+  // Live forensic summary stats for Die Akte impact preview
+  const forensicPreview = useMemo(() => {
+    const traceRisk =
+      (currentForensic.gloves ? 0 : 35) +
+      (currentForensic.mask ? 0 : 30) +
+      (currentForensic.entryTool === 'crowbar' ? 20 : currentForensic.entryTool === 'glass_cutter' ? 4 : 8);
+    const noiseMeters =
+      currentForensic.entryTool === 'crowbar'
+        ? 14
+        : currentForensic.entryTool === 'glass_cutter'
+          ? 3.5
+          : 5.5;
+    const speedDeltaPct =
+      (currentForensic.entryTool === 'crowbar' ? 24 : currentForensic.entryTool === 'glass_cutter' ? 12 : 10) -
+      (currentForensic.gloves ? 5 : 0);
+    const lightConcealmentPct = currentForensic.darkClothing ? 25 : 0;
+    return { traceRisk, noiseMeters, speedDeltaPct, lightConcealmentPct };
+  }, [currentForensic]);
+
   const blueprintCost = 2500 * target.difficulty;
 
   const handleQuickAddNode = (nodeId: string) => {
@@ -213,11 +320,11 @@ export function ReissbrettScreen() {
   const warningCount = resolvedPlan.issues.filter((i) => i.severity === 'warning').length;
 
   return (
-    <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#060b16] text-slate-100">
+    <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#050912] text-slate-100">
       {/* Slim Top Reißbrett Header */}
-      <header className="h-13 shrink-0 px-4 border-b border-slate-800 bg-[#070e1d] flex items-center justify-between gap-3">
+      <header className="h-13 shrink-0 px-3.5 border-b border-slate-800/90 bg-[#070d1b] flex items-center justify-between gap-2.5">
         {/* Left: Back & Target Title */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={() => setPhase('safehouse')}
@@ -228,7 +335,7 @@ export function ReissbrettScreen() {
           </button>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
               <span className="font-mono-tech text-[10px] uppercase tracking-widest text-amber-400 whitespace-nowrap shrink-0">
                 DAS REISSBRETT
               </span>
@@ -243,46 +350,78 @@ export function ReissbrettScreen() {
           </div>
         </div>
 
-        {/* Center: Floor Switcher Pills */}
-        <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
-          <Layers className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-0.5" />
-          {target.floors.map((fl) => {
-            const active = fl === selectedFloor;
-            const ghostsOnFloor = snapshot.crew.filter((g) => g.floor === fl);
-            return (
-              <button
-                key={fl}
-                type="button"
-                onClick={() => setSelectedFloor(fl)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono-tech font-semibold transition-colors cursor-pointer ${
-                  active
-                    ? 'bg-sky-400 text-slate-950'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <span>{FLOOR_LABELS[fl]}</span>
-                {ghostsOnFloor.length > 0 && (
-                  <span className="flex items-center gap-0.5">
-                    {ghostsOnFloor.map((g) => (
-                      <span
-                        key={g.crewId}
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{
-                          backgroundColor: active
-                            ? '#020617'
-                            : crew[g.crewId]?.accentColor ?? '#38bdf8',
-                        }}
-                      />
-                    ))}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Center: Floor Switcher + Blueprint Realism Overlays */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+            <Layers className="w-3.5 h-3.5 text-slate-400 ml-1 mr-0.5" />
+            {target.floors.map((fl) => {
+              const active = fl === selectedFloor;
+              const ghostsOnFloor = snapshot.crew.filter((g) => g.floor === fl);
+              return (
+                <button
+                  key={fl}
+                  type="button"
+                  onClick={() => setSelectedFloor(fl)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-mono-tech font-semibold transition-colors cursor-pointer ${
+                    active
+                      ? 'bg-sky-400 text-slate-950'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <span>{FLOOR_LABELS[fl]}</span>
+                  {ghostsOnFloor.length > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      {ghostsOnFloor.map((g) => (
+                        <span
+                          key={g.crewId}
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{
+                            backgroundColor: active
+                              ? '#020617'
+                              : crew[g.crewId]?.accentColor ?? '#38bdf8',
+                          }}
+                        />
+                      ))}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Blackout Light/Shadow Preview Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowLightOverlay((v) => !v)}
+            title="Stromausfall-Schattenzonen (Licht/Schatten) im Grundriss einblenden"
+            className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              showLightOverlay
+                ? 'bg-cyan-500/25 border-cyan-400/70 text-cyan-100'
+                : 'bg-slate-900 border-slate-700/80 text-slate-300 hover:text-white'
+            }`}
+          >
+            <Moon className="w-3.5 h-3.5 text-cyan-300" />
+            <span className="hidden xl:inline">Schatten</span>
+          </button>
+
+          {/* Noise Radius Rings Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowNoiseOverlay((v) => !v)}
+            title="Lärm-Radien für Werkzeuge & Aktionen einblenden"
+            className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              showNoiseOverlay
+                ? 'bg-amber-500/20 border-amber-400/65 text-amber-100'
+                : 'bg-slate-900 border-slate-700/80 text-slate-300 hover:text-white'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5 text-amber-300" />
+            <span className="hidden xl:inline">Lärm</span>
+          </button>
         </div>
 
         {/* Right: Starter Plan + Scouting + LAUNCH HEIST CTA */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -291,28 +430,29 @@ export function ReissbrettScreen() {
               setSyncFeedback({ ok: true, msg: 'Jupps Starter-Plan geladen!' });
               setTimeout(() => setSyncFeedback(null), 2500);
             }}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-400/40 text-amber-200 text-xs font-semibold cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-400/40 text-amber-200 text-xs font-semibold cursor-pointer whitespace-nowrap"
             title="Lädt Jupps empfohlenen Mehrspur-Plan mit Synchronpunkten"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline">Starter-Plan laden</span>
-            <span className="lg:hidden">Starter</span>
+            <span className="hidden 2xl:inline">Starter-Plan laden</span>
+            <span className="2xl:hidden">Starter-Plan</span>
           </button>
 
           <button
             type="button"
             onClick={() => setPhase('scouting')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/50 text-sky-100 text-xs font-semibold cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/50 text-sky-100 text-xs font-semibold cursor-pointer whitespace-nowrap"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>Auskundschaften</span>
+            <span className="hidden lg:inline">Auskundschaften</span>
+            <span className="lg:hidden">3D Späh</span>
           </button>
 
           <button
             type="button"
             disabled={!resolvedPlan.valid}
             onClick={() => launchHeist(activeTargetId)}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-display font-bold text-xs tracking-wide shadow-lg shadow-amber-500/25 cursor-pointer disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-display font-bold text-xs tracking-wide shadow-lg shadow-amber-500/25 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
           >
             <Play className="w-3.5 h-3.5 fill-slate-950" />
             <span>Bruch durchziehen</span>
@@ -347,6 +487,9 @@ export function ReissbrettScreen() {
               selectedFloor={selectedFloor}
               selectedNodeId={selectedNodeId}
               selectedBlockId={selectedBlockId}
+              showLightOverlay={showLightOverlay}
+              showNoiseOverlay={showNoiseOverlay}
+              previewNoiseRing={previewNoiseRing}
               onSelectNode={(nid) => {
                 setSelectedNodeId(nid);
                 setSelectedBlockId(null);
@@ -356,14 +499,14 @@ export function ReissbrettScreen() {
             />
           </div>
 
-          {/* Right Sidebar: Taktik-Inspektor, Synchronpunkte, Plan B */}
-          <aside className="w-76 xl:w-84 shrink-0 noir-card rounded-xl flex flex-col min-h-0 overflow-hidden border-slate-800">
-            {/* Sidebar Tab Bar */}
-            <div className="grid grid-cols-3 p-1 bg-slate-950/90 border-b border-slate-800 shrink-0 gap-1">
+          {/* Right Sidebar: Taktik-Inspektor, Forensik-Loadout, Synchronpunkte, Plan B */}
+          <aside className="w-80 xl:w-88 shrink-0 noir-card rounded-xl flex flex-col min-h-0 overflow-hidden border-slate-800">
+            {/* 4-Tab Sidebar Bar */}
+            <div className="grid grid-cols-4 p-1 bg-slate-950/90 border-b border-slate-800 shrink-0 gap-1">
               <button
                 type="button"
                 onClick={() => setInspectorTab('inspect')}
-                className={`py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer ${
+                className={`py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer ${
                   inspectorTab === 'inspect'
                     ? 'bg-sky-500/25 text-sky-200 border border-sky-400/40'
                     : 'text-slate-400 hover:text-white'
@@ -373,8 +516,20 @@ export function ReissbrettScreen() {
               </button>
               <button
                 type="button"
+                onClick={() => setInspectorTab('forensic')}
+                className={`py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
+                  inspectorTab === 'forensic'
+                    ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Fingerprint className="w-3 h-3" />
+                <span>Forensik</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setInspectorTab('sync')}
-                className={`py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
+                className={`py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
                   inspectorTab === 'sync'
                     ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40'
                     : 'text-slate-400 hover:text-white'
@@ -386,7 +541,7 @@ export function ReissbrettScreen() {
               <button
                 type="button"
                 onClick={() => setInspectorTab('planb')}
-                className={`py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
+                className={`py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer flex items-center justify-center gap-1 ${
                   inspectorTab === 'planb'
                     ? 'bg-rose-500/20 text-rose-200 border border-rose-400/40'
                     : 'text-slate-400 hover:text-white'
@@ -412,10 +567,9 @@ export function ReissbrettScreen() {
 
             {/* Sidebar Tab Body */}
             <div className="flex-1 min-h-0 overflow-y-auto ns-scroll p-3 space-y-3">
-              {/* -------- TAB: INSPEKTOR (Node or Block + Validation) -------- */}
+              {/* -------- TAB 1: INSPEKTOR (Node or Block + Validation) -------- */}
               {inspectorTab === 'inspect' && (
                 <>
-                  {/* Selected Floorplan Node Details */}
                   {selectedNode && !selectedBlock && (
                     <div className="p-3 rounded-xl bg-slate-900/90 border border-sky-400/35 space-y-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -480,7 +634,6 @@ export function ReissbrettScreen() {
                     </div>
                   )}
 
-                  {/* Selected Timeline Action Block Editor */}
                   {selectedBlock && (
                     <div className="p-3 rounded-xl bg-slate-900/90 border border-amber-400/45 space-y-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -505,7 +658,6 @@ export function ReissbrettScreen() {
                         </button>
                       </div>
 
-                      {/* Start Time Control */}
                       <div className="space-y-1">
                         <div className="flex items-center justify-between font-mono-tech text-[11px]">
                           <span className="text-slate-400">Wunsch-Startzeit:</span>
@@ -529,7 +681,6 @@ export function ReissbrettScreen() {
                         />
                       </div>
 
-                      {/* Duration Control for wait / lookout */}
                       {(selectedBlock.type === 'wait' || selectedBlock.type === 'lookout') && (
                         <div className="space-y-1">
                           <div className="flex items-center justify-between font-mono-tech text-[11px]">
@@ -583,13 +734,11 @@ export function ReissbrettScreen() {
                   {!selectedNode && !selectedBlock && (
                     <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-xs text-slate-400 leading-relaxed">
                       Klicke einen <strong className="text-sky-300">Knoten im Grundriss</strong>{' '}
-                      (oder Doppelklick zum Hinzufügen) oder einen{' '}
-                      <strong className="text-amber-300">Block auf der Zeitleiste</strong>, um
-                      Details, Werkzeug und Synchronpunkte zu bearbeiten.
+                      oder einen <strong className="text-amber-300">Block auf der Zeitleiste</strong>.
+                      Alle Pfade folgen echten Korridoren (A*) und Türen.
                     </div>
                   )}
 
-                  {/* Quick Buy Blueprints */}
                   {!intel.blueprintPurchased && (
                     <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-between gap-2">
                       <div className="text-[11px] text-sky-200 leading-tight">
@@ -649,14 +798,213 @@ export function ReissbrettScreen() {
                 </>
               )}
 
-              {/* -------- TAB: SYNCHRONPUNKTE -------- */}
+              {/* -------- TAB 2: FORENSIK-AUSRÜSTUNG (Live Die-Akte Impact) -------- */}
+              {inspectorTab === 'forensic' && selectedMember && (
+                <div className="space-y-3">
+                  {/* Crew Picker Strip */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {rawPlan.assignedCrewIds.map((cid) => {
+                      const m = crew[cid];
+                      const active = cid === selectedCrewId;
+                      return (
+                        <button
+                          key={cid}
+                          type="button"
+                          onClick={() => setSelectedCrewId(cid)}
+                          className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[11px] font-semibold cursor-pointer ${
+                            active
+                              ? 'bg-sky-500/20 border-sky-400/70 text-white'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <CharacterAvatar
+                            portraitKey={m.portraitKey}
+                            name={m.name}
+                            accentColor={m.accentColor}
+                            size="xs"
+                          />
+                          <span>{m.name.split(' ')[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Passive Forensic Gear Toggles */}
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCrewForensicLoadout(selectedCrewId, {
+                          gloves: !currentForensic.gloves,
+                        })
+                      }
+                      className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                        currentForensic.gloves
+                          ? 'bg-emerald-500/15 border-emerald-400/55 text-emerald-100'
+                          : 'bg-slate-900/80 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold flex items-center gap-1.5">
+                          <Fingerprint className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Nitril-Handschuhe</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          Keine Fingerabdrücke in Die Akte (+5% Zeit)
+                        </div>
+                      </div>
+                      <span className="font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-950/70 shrink-0">
+                        {currentForensic.gloves ? 'AN' : 'AUS'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCrewForensicLoadout(selectedCrewId, {
+                          mask: !currentForensic.mask,
+                        })
+                      }
+                      className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                        currentForensic.mask
+                          ? 'bg-emerald-500/15 border-emerald-400/55 text-emerald-100'
+                          : 'bg-slate-900/80 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold flex items-center gap-1.5">
+                          <EyeOff className="w-3.5 h-3.5 text-sky-300" />
+                          <span>Sturmhaube / Maske</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          Blockt CCTV-Gesichtsabgleich (auf Straße auffällig)
+                        </div>
+                      </div>
+                      <span className="font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-950/70 shrink-0">
+                        {currentForensic.mask ? 'AN' : 'AUS'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCrewForensicLoadout(selectedCrewId, {
+                          darkClothing: !currentForensic.darkClothing,
+                        })
+                      }
+                      className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                        currentForensic.darkClothing
+                          ? 'bg-cyan-500/15 border-cyan-400/55 text-cyan-100'
+                          : 'bg-slate-900/80 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold flex items-center gap-1.5">
+                          <Moon className="w-3.5 h-3.5 text-cyan-300" />
+                          <span>Mattschwarze Kleidung</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          -25% Sichtbarkeit in abgedunkelten Räumen
+                        </div>
+                      </div>
+                      <span className="font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-950/70 shrink-0">
+                        {currentForensic.darkClothing ? 'AN' : 'AUS'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Entry Tool Selector: Glasschneider vs Dietrich vs Brecheisen */}
+                  <div className="space-y-1.5">
+                    <div className="font-mono-tech text-[10px] uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                      <Wrench className="w-3 h-3" />
+                      <span>Einstiegs- &amp; Vitrinenwerkzeug</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {ENTRY_TOOL_OPTIONS.map((opt) => {
+                        const active = currentForensic.entryTool === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() =>
+                              setCrewForensicLoadout(selectedCrewId, {
+                                entryTool: opt.id,
+                              })
+                            }
+                            className={`p-2 rounded-lg border text-center transition-all cursor-pointer ${
+                              active
+                                ? opt.id === 'crowbar'
+                                  ? 'bg-rose-500/20 border-rose-400/70 text-rose-100'
+                                  : 'bg-amber-500/20 border-amber-400/70 text-amber-100'
+                                : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            <div className="text-[11px] font-bold">{opt.label}</div>
+                            <div className="text-[9px] opacity-80 mt-0.5 leading-tight">
+                              {opt.noiseHint}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Live Die-Akte Forensik Impact Preview */}
+                  <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2">
+                    <div className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-400">
+                      Auswirkung auf Die Akte &amp; Einsatz
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 font-mono-tech text-[10px]">
+                      <div className="p-1.5 rounded bg-slate-900/90">
+                        <div className="text-slate-500">Akte Spur-Risiko</div>
+                        <div
+                          className={`font-bold ${
+                            forensicPreview.traceRisk >= 40
+                              ? 'text-rose-400'
+                              : forensicPreview.traceRisk >= 20
+                                ? 'text-amber-300'
+                                : 'text-emerald-300'
+                          }`}
+                        >
+                          {forensicPreview.traceRisk}%
+                        </div>
+                      </div>
+                      <div className="p-1.5 rounded bg-slate-900/90">
+                        <div className="text-slate-500">Lärm-Radius</div>
+                        <div
+                          className={`font-bold ${
+                            forensicPreview.noiseMeters >= 10
+                              ? 'text-rose-400'
+                              : 'text-sky-300'
+                          }`}
+                        >
+                          ~{forensicPreview.noiseMeters} m
+                        </div>
+                      </div>
+                      <div className="p-1.5 rounded bg-slate-900/90">
+                        <div className="text-slate-500">Arbeitstempo</div>
+                        <div className="font-bold text-amber-200">
+                          +{forensicPreview.speedDeltaPct}%
+                        </div>
+                      </div>
+                      <div className="p-1.5 rounded bg-slate-900/90">
+                        <div className="text-slate-500">Schattentarnung</div>
+                        <div className="font-bold text-cyan-300">
+                          +{forensicPreview.lightConcealmentPct}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* -------- TAB 3: SYNCHRONPUNKTE -------- */}
               {inspectorTab === 'sync' && (
                 <div className="space-y-3">
                   <p className="text-[11px] text-slate-400 leading-snug">
                     Verknüpfe zwei Spuren: Block B startet erst, wenn Block A vollständig abgeschlossen ist (z. B. Strom kappen → Eindringen).
                   </p>
 
-                  {/* Dropdown Creator */}
                   <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-400/35 space-y-2">
                     <div className="font-mono-tech text-[10px] uppercase text-amber-300">
                       Neuer Synchronpunkt
@@ -695,7 +1043,6 @@ export function ReissbrettScreen() {
                     </button>
                   </div>
 
-                  {/* Active Sync Barriers List */}
                   <div className="space-y-1.5">
                     {rawPlan.syncBarriers.length === 0 ? (
                       <p className="text-xs text-slate-500 italic">
@@ -735,7 +1082,7 @@ export function ReissbrettScreen() {
                 </div>
               )}
 
-              {/* -------- TAB: PLAN B AUSWEICHZWEIGE -------- */}
+              {/* -------- TAB 4: PLAN B AUSWEICHZWEIGE -------- */}
               {inspectorTab === 'planb' && (
                 <div className="space-y-2.5">
                   <p className="text-[11px] text-slate-400 leading-snug">

@@ -135,8 +135,8 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     name: 'Nitril-Präzisionshandschuhe',
     category: 'stealth',
     costEur: 450,
-    description: 'Verhindert Fingerabdrücke an Schlössern, Vitrinen und Tresoren.',
-    speedMultiplier: 1.0,
+    description: 'Verhindert Fingerabdrücke an Schlössern, Vitrinen und Tresoren (+5% Arbeitszeit durch geringeres Tastgefühl).',
+    speedMultiplier: 1.05,
     noiseDelta: 0,
     traceDelta: -38,
     applicableNodeKinds: [
@@ -150,7 +150,46 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     ],
     applicableSkills: ['locks', 'electronics', 'strength'],
   },
+  mask: {
+    id: 'mask',
+    name: 'Sturmhaube (Gesichtsschutz)',
+    category: 'stealth',
+    costEur: 350,
+    description: 'Blockiert Gesichtserkennung auf Überwachungskameras und bei Zeugen — fällt aber in öffentlichen Straßen sofort auf!',
+    speedMultiplier: 1.0,
+    noiseDelta: 0,
+    traceDelta: -25,
+    applicableNodeKinds: ['camera', 'loot_case', 'safe', 'entry_door'],
+    applicableSkills: ['locks', 'electronics', 'strength'],
+  },
+  dark_clothing: {
+    id: 'dark_clothing',
+    name: 'Mattschwarze Einsatzkleidung',
+    category: 'stealth',
+    costEur: 1400,
+    description: 'Schluckt Restlicht in abgedunkelten Räumen und senkt Sichtbarkeit (Licht-Exposition -25%) sowie Laufgeräusche.',
+    speedMultiplier: 1.0,
+    noiseDelta: -8,
+    traceDelta: -6,
+    applicableNodeKinds: ['entry_roof', 'entry_cellar', 'entry_service', 'lookout'],
+    applicableSkills: ['climbing', 'locks'],
+  },
 };
+
+export function getDefaultForensicLoadout(member: CrewMember) {
+  const entryTool: 'lockpick_set' | 'glass_cutter' | 'crowbar' =
+    member.equippedTools.includes('glass_cutter')
+      ? 'glass_cutter'
+      : member.equippedTools.includes('crowbar')
+        ? 'crowbar'
+        : 'lockpick_set';
+  return {
+    gloves: member.equippedTools.includes('gloves'),
+    mask: member.equippedTools.includes('mask'),
+    darkClothing: member.equippedTools.includes('dark_clothing'),
+    entryTool,
+  };
+}
 
 export const FENCES: Record<FenceId, FenceDef> = {
   mateo_puerto: {
@@ -858,6 +897,8 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         baseDurationSec: 8,
         noiseLevel: 24,
         traceRisk: 18,
+        connectsToFloor: 0,
+        connectsToPos: { x: 13, z: 3 },
         description: 'Wartungsschacht direkt in den Technikkeller.',
         propModel: 'hatch',
       },
@@ -876,6 +917,8 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         baseDurationSec: 9,
         noiseLevel: 16,
         traceRisk: 16,
+        connectsToFloor: 0,
+        connectsToPos: { x: -7, z: 10.5 },
         description: 'Über das Nachbardach erreichbarer Atelier-Balkon.',
         propModel: 'door',
       },
@@ -1165,7 +1208,8 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
       { id: 'vm_w2', floor: 0, x1: 2, z1: 8, x2: 13, z2: 8, kind: 'exterior' },
       { id: 'vm_w3', floor: 0, x1: -13, z1: -12, x2: 13, z2: -12, kind: 'exterior' },
       { id: 'vm_w4', floor: 0, x1: -13, z1: -12, x2: -13, z2: 8, kind: 'exterior' },
-      { id: 'vm_w5', floor: 0, x1: 13, z1: -12, x2: 13, z2: 8, kind: 'exterior' },
+      { id: 'vm_w5a', floor: 0, x1: 13, z1: -12, x2: 13, z2: 1, kind: 'exterior' },
+      { id: 'vm_w5b', floor: 0, x1: 13, z1: 3, x2: 13, z2: 8, kind: 'exterior' },
       { id: 'vm_w6', floor: 0, x1: 2, z1: -12, x2: 2, z2: 1, kind: 'interior' },
       { id: 'vm_w7', floor: 0, x1: 2, z1: 4, x2: 2, z2: 8, kind: 'interior' },
       // Garden perimeter fence
@@ -1234,6 +1278,8 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         baseDurationSec: 8,
         noiseLevel: 20,
         traceRisk: 14,
+        connectsToFloor: 0,
+        connectsToPos: { x: -15, z: -2 },
         description: 'Führt direkt zum Weinkeller und dem Hauptverteiler.',
         propModel: 'hatch',
       },
@@ -1252,6 +1298,8 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         baseDurationSec: 10,
         noiseLevel: 15,
         traceRisk: 14,
+        connectsToFloor: 0,
+        connectsToPos: { x: -6, z: 10.5 },
         description: 'Direkter Aufstieg in die Master-Suite über die Pergola.',
         propModel: 'door',
       },
@@ -1428,6 +1476,22 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         connectsToFloor: 1,
         connectsToPos: { x: -2, z: -7 },
         description: 'Marmortreppe zur Master-Suite.',
+      },
+      {
+        id: 'vm_stairs_cellar',
+        label: 'Kellertreppe Keller ↔ EG',
+        kind: 'stairs',
+        floor: -1,
+        pos: { x: 5, z: 2 },
+        roomId: 'vm_cellar',
+        visibleFromStreet: false,
+        difficulty: 1,
+        baseDurationSec: 4,
+        noiseLevel: 8,
+        traceRisk: 4,
+        connectsToFloor: 0,
+        connectsToPos: { x: 5, z: 2 },
+        description: 'Diensttreppe vom Weinkeller ins Arbeitszimmer.',
       },
       {
         id: 'vm_getaway',
@@ -1609,6 +1673,8 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         baseDurationSec: 9,
         noiseLevel: 16,
         traceRisk: 14,
+        connectsToFloor: 0,
+        connectsToPos: { x: 17, z: 4 },
         description: 'Führt unter dem Sandsteingewölbe hindurch ins Archiv.',
         propModel: 'hatch',
       },
@@ -1805,6 +1871,22 @@ export const TARGETS: Record<TargetId, HeistTarget> = {
         connectsToFloor: 0,
         connectsToPos: { x: 10, z: -2 },
         description: 'Steintreppe vom Heizungsgewölbe ins Tresorarchiv.',
+      },
+      {
+        id: 'dd_stairs_roof',
+        label: 'Fassaden-Steigleiter (Ost ↔ Kuppel)',
+        kind: 'stairs',
+        floor: 0,
+        pos: { x: 17, z: -8 },
+        roomId: 'dd_plaza',
+        visibleFromStreet: false,
+        difficulty: 3,
+        baseDurationSec: 5,
+        noiseLevel: 12,
+        traceRisk: 6,
+        connectsToFloor: 2,
+        connectsToPos: { x: 13.5, z: -8 },
+        description: 'Baugerüst-Zugang hinauf zur Kuppel-Balustrade.',
       },
       {
         id: 'dd_getaway',

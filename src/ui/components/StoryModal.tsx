@@ -41,22 +41,23 @@ export function StoryModal() {
       aria-label={beat.title}
     >
       <div className="noir-card relative w-full max-w-3xl max-h-[88vh] rounded-2xl overflow-hidden flex flex-col border border-amber-400/30 shadow-2xl">
-        {/* Hero Art Frame with subtle Ken-Burns motion */}
-        <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-slate-900 shrink-0">
+        {/* Hero Art Frame with subtle Ken-Burns 35mm cinema treatment */}
+        <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-slate-950 shrink-0 cinema-vignette">
           {!imgError ? (
             <img
               src={imageUrl}
               alt={beat.title}
               onError={() => setImgError(true)}
-              className="w-full h-full object-cover animate-ken-burns"
+              className="w-full h-full object-cover animate-ken-burns contrast-[1.04]"
             />
           ) : (
             <div className="w-full h-full blueprint-surface flex items-center justify-center text-slate-500 font-mono-tech text-xs">
               [DOSSIER-PANEL: {beat.imageKey}]
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#080e1c] via-[#080e1c]/45 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#080e1c]/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 cinema-scanlines pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#060b16] via-[#060b16]/45 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#060b16]/75 via-transparent to-transparent" />
 
           {/* Top Bar Badges */}
           <div className="absolute top-4 left-5 right-5 flex items-center justify-between">

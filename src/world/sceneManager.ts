@@ -7,19 +7,33 @@ import {
   Vec2,
 } from '../sim/types';
 import { TARGETS } from '../sim/data';
+import { canScoutNodeFrom, hasSolidLineOfSight } from '../sim/pathfinding';
 import { useGameStore } from '../state/store';
 import { assetRegistry } from './assetLoader';
 import { AudioEngine } from './audioEngine';
 import { BuiltLevel, buildLevel } from './levelBuilder';
 import { GuardSystem } from './guardSystem';
+import {
+  PedestrianNoiseEvent,
+  PedestrianStimulusActor,
+  PedestrianSystem,
+} from './pedestrianSystem';
 import { CharacterController } from './characterController';
 import { VehicleController } from './vehicleController';
+import { TrafficSystem } from './trafficSystem';
+import {
+  createRenderPipeline,
+  type RenderPipeline,
+  type RenderPipelineDiagnostics,
+  type RenderQuality,
+} from './rendering';
 import { clamp, damp, dampAngleRad, dist2D } from './mathUtils';
 
 // ============================================================================
-// NACHTSCHICHT — Three.js Scene Manager & 3D Game Loop Orchestrator
-// Coordinates Scouting, Live Heist Execution, and Getaway Escape modes,
-// lighting, cameras, audio, asset hot-upgrade, and window.__NACHTSCHICHT__.
+// NACHTSCHICHT — Round 2 Three.js Scene Manager & 3D Game Loop Orchestrator
+// Coordinates Photorealistic RenderPipeline (IBL + EffectComposer + Wet Puddles
+// + Volumetrics), Wall-Occluded Scouting, Solid Locked Doors, Live Execution,
+// Minigame Hooks, Getaway Driving & Quality Switching.
 // ============================================================================
 
 export interface WorldOverlayFeedback {
@@ -47,13 +61,18 @@ export interface NachtschichtDebugHandle {
     assetsReady: boolean;
     loadedModels: string[];
     loadedTextures: string[];
+    loadedPbrSets: string[];
     powerDisabled: boolean;
     alarmLevel: string;
     guardCount: number;
     crewCount: number;
+    lightExposure: number;
+    renderQuality: RenderQuality;
+    renderDiagnostics: RenderPipelineDiagnostics | null;
   };
   setPhase: (phase: GamePhase) => void;
   quickPlay: (targetId: TargetId, mode?: 'planning' | 'scouting' | 'executing') => void;
+  setQuality: (quality: RenderQuality) => void;
   setCamera: (
     pos: [number, number, number],
     lookAt: [number, number, number]
@@ -76,19 +95,23 @@ export class SceneManager {
 
   private renderer: THREE.WebGLRenderer | null = null;
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(56, 16 / 9, 0.25, 620);
+  private camera = new THREE.PerspectiveCamera(54, 16 / 9, 0.25, 620);
+  private renderPipeline: RenderPipeline | null = null;
   private audio: AudioEngine;
 
   private level: BuiltLevel | null = null;
   private guards: GuardSystem | null = null;
+  private pedestrians: PedestrianSystem | null = null;
   private characters: CharacterController | null = null;
   private vehicles: VehicleController | null = null;
+  private traffic: TrafficSystem | null = null;
   private builtTargetId: TargetId | null = null;
   private currentPhase: GamePhase = 'title';
+  private renderQuality: RenderQuality = 'high';
 
   // Camera state
   private cameraYaw = 0; // 0 = looking toward -Z (North)
-  private cameraPitch = 0.52;
+  private cameraPitch = 0.48;
   private camPosSmooth = new THREE.Vector3(0, 6, 18);
   private camLookSmooth = new THREE.Vector3(0, 1.5, 8);
   private cameraOverride: {
@@ -111,10 +134,12 @@ export class SceneManager {
   private scanTargetId: string | null = null;
   private scanProgress = 0;
   private scanAutoLock = false;
+  private scoutingBlockedReason: 'wall_occluded' | 'too_far' | 'wrong_floor' | null = null;
 
   private interactNodeId: string | null = null;
   private interactProgress = 0;
   private interactAutoLock = false;
+  private currentLightExposure = 0.45;
 
   // Timing & Audio transition trackers
   private rafId = 0;
@@ -125,6 +150,7 @@ export class SceneManager {
   private prevPowerDisabled = false;
   private prevLootTotal = 0;
   private prevRadioCount = 0;
+  private prevBrokenGlassCount = 0;
   private disposed = false;
   private webglError: string | null = null;
   private lastFeedbackHash = '';
@@ -140,29 +166,30 @@ export class SceneManager {
     this.onFeedback = onFeedback;
     this.audio = new AudioEngine(useGameStore.getState().audioMuted);
 
+    this.renderQuality = useGameStore.getState().graphicsQuality;
+
     this.initRenderer();
-    this.initBaseLighting();
     this.bindEvents();
     this.registerDebugHook();
 
-    // Preload GLB models & WebP textures immediately
+    // Preload GLB models, skeletal animations & 4-map WebP PBR textures immediately
     void assetRegistry.preloadAll();
     this.unsubAssets = assetRegistry.onReady(() => {
       if (this.disposed) return;
-      // Upgrade procedural placeholders seamlessly to real GLB/WebP models while preserving live coordinates!
       this.hotUpgradeAssets();
     });
 
-    // Build initial target
     const state = useGameStore.getState();
     this.currentPhase = state.phase;
     this.rebuildWorld(state.activeTargetId, true);
 
-    // Subscribe to Zustand store transitions
     this.unsubStore = useGameStore.subscribe((next, prev) => {
       if (this.disposed) return;
       if (next.audioMuted !== prev.audioMuted) {
         this.audio.setMuted(next.audioMuted);
+      }
+      if (next.graphicsQuality !== prev.graphicsQuality) {
+        this.setQuality(next.graphicsQuality);
       }
       if (next.activeTargetId !== prev.activeTargetId) {
         this.rebuildWorld(next.activeTargetId, true);
@@ -187,11 +214,6 @@ export class SceneManager {
       const w = Math.max(320, this.container.clientWidth || window.innerWidth);
       const h = Math.max(240, this.container.clientHeight || window.innerHeight);
       renderer.setSize(w, h, false);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.18;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';
@@ -202,6 +224,24 @@ export class SceneManager {
       this.renderer = renderer;
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
+
+      const target = TARGETS[useGameStore.getState().activeTargetId];
+      this.renderPipeline = createRenderPipeline(
+        renderer,
+        this.scene,
+        this.camera,
+        this.renderQuality,
+        {
+          theme: target.city,
+          palette: target.themePalette,
+          enableRain: true,
+          enableMist: true,
+          environmentUrls: {
+            salou: assetRegistry.getEnvironmentUrl('Salou'),
+            dresden: assetRegistry.getEnvironmentUrl('Dresden'),
+          },
+        }
+      );
 
       renderer.domElement.addEventListener('webglcontextlost', (e) => {
         e.preventDefault();
@@ -221,30 +261,29 @@ export class SceneManager {
     }
   }
 
-  private initBaseLighting(): void {
-    // Rich Mediterranean midnight skylight + warm ground bounce
-    const hemi = new THREE.HemisphereLight(0x4c6fa8, 0x1b2334, 0.92);
-    this.scene.add(hemi);
+  public setQuality(quality: RenderQuality): void {
+    this.renderQuality = quality;
+    this.renderPipeline?.setQuality(quality);
+  }
 
-    // Crisp coastal moonlight casting noir shadows
-    const moon = new THREE.DirectionalLight(0xa5c4ff, 1.15);
-    moon.position.set(-28, 46, 34);
-    moon.castShadow = true;
-    moon.shadow.mapSize.set(2048, 2048);
-    moon.shadow.camera.near = 4;
-    moon.shadow.camera.far = 160;
-    const d = 44;
-    moon.shadow.camera.left = -d;
-    moon.shadow.camera.right = d;
-    moon.shadow.camera.top = d;
-    moon.shadow.camera.bottom = -d;
-    moon.shadow.bias = -0.0005;
-    this.scene.add(moon);
+  private unregisterLevelPipelineAssets(): void {
+    if (!this.level || !this.renderPipeline) return;
+    for (const wet of this.level.wetMaterials) {
+      this.renderPipeline.unregisterWetMaterial(wet);
+    }
+    for (const cone of this.level.volumetricCones) {
+      this.renderPipeline.volumetrics.unregisterCone(cone);
+    }
+  }
 
-    // Subtle warm city horizon rim light from the south/west promenade
-    const rim = new THREE.DirectionalLight(0xffb366, 0.38);
-    rim.position.set(35, 16, -28);
-    this.scene.add(rim);
+  private registerLevelPipelineAssets(): void {
+    if (!this.level || !this.renderPipeline) return;
+    for (const wet of this.level.wetMaterials) {
+      this.renderPipeline.registerWetMaterial(wet);
+    }
+    for (const cone of this.level.volumetricCones) {
+      this.renderPipeline.volumetrics.registerCone(cone);
+    }
   }
 
   private rebuildWorld(targetId: TargetId, resetPositions: boolean): void {
@@ -255,7 +294,7 @@ export class SceneManager {
     const prevCarPos = this.vehicles ? { ...this.vehicles.carPos } : null;
     const prevCarRot = this.vehicles ? this.vehicles.carRotY : 0;
 
-    // Dispose old level sub-systems
+    this.unregisterLevelPipelineAssets();
     if (this.level) {
       this.scene.remove(this.level.root);
       this.level.dispose();
@@ -263,6 +302,10 @@ export class SceneManager {
     if (this.guards) {
       this.scene.remove(this.guards.root);
       this.guards.dispose();
+    }
+    if (this.pedestrians) {
+      this.scene.remove(this.pedestrians.root);
+      this.pedestrians.dispose();
     }
     if (this.characters) {
       this.scene.remove(this.characters.root);
@@ -272,24 +315,34 @@ export class SceneManager {
       this.scene.remove(this.vehicles.root);
       this.vehicles.dispose();
     }
+    if (this.traffic) {
+      this.scene.remove(this.traffic.root);
+      this.traffic.dispose();
+    }
 
     const target = TARGETS[targetId];
     const store = useGameStore.getState();
 
-    this.scene.background = new THREE.Color(target.themePalette.fogColor);
-    this.scene.fog = new THREE.FogExp2(target.themePalette.fogColor, 0.0062);
+    this.renderPipeline?.setEnvironment(target.city, target.themePalette);
 
     this.level = buildLevel(target);
     this.scene.add(this.level.root);
+    this.registerLevelPipelineAssets();
 
     this.guards = new GuardSystem(target);
     this.scene.add(this.guards.root);
+
+    this.pedestrians = new PedestrianSystem(target);
+    this.scene.add(this.pedestrians.root);
 
     this.characters = new CharacterController(target, store.crew);
     this.scene.add(this.characters.root);
 
     this.vehicles = new VehicleController(target, this.level.safehousePos);
     this.scene.add(this.vehicles.root);
+
+    this.traffic = new TrafficSystem(target);
+    this.scene.add(this.traffic.root);
 
     this.builtTargetId = targetId;
 
@@ -301,6 +354,7 @@ export class SceneManager {
       this.characters.maraRotY = prevMaraRot;
       this.characters.manualExecutionControl = prevManual;
       this.level.setFocusFloor(prevMaraFloor);
+      this.renderPipeline?.setIndoorCutaway(prevMaraFloor < 0);
       if (store.phase === 'escape' && prevCarPos) {
         this.vehicles.startEscape(store.escapeState?.pursuitHeat ?? 45);
         this.vehicles.carPos = prevCarPos;
@@ -336,6 +390,11 @@ export class SceneManager {
     this.prevPowerDisabled = store.liveState?.powerDisabled ?? false;
     this.prevLootTotal = store.liveState?.totalLootEur ?? 0;
     this.prevRadioCount = store.liveState?.radioLog.length ?? 0;
+    this.prevBrokenGlassCount = store.liveState?.brokenGlassNodes.length ?? 0;
+
+    this.renderPipeline?.setBinocularsActive(false);
+    this.renderPipeline?.setAlarmIntensity(0);
+    this.renderPipeline?.setIndoorCutaway(false);
 
     if (!this.characters || !this.vehicles || !this.level) return;
 
@@ -344,14 +403,15 @@ export class SceneManager {
       this.vehicles.resetParked();
       this.level.setFocusFloor(0);
       this.level.setPowerDisabled(false);
+      this.renderPipeline?.setPowerDisabled(false);
       this.cameraYaw = 0;
-      this.cameraPitch = 0.44;
+      this.cameraPitch = 0.42;
       this.camPosSmooth.set(
         this.characters.maraPos.x,
-        4.6,
-        this.characters.maraPos.z + 8.5
+        4.4,
+        this.characters.maraPos.z + 8.2
       );
-      this.camLookSmooth.set(this.characters.maraPos.x, 1.5, this.characters.maraPos.z - 2);
+      this.camLookSmooth.set(this.characters.maraPos.x, 1.45, this.characters.maraPos.z - 2);
       this.audio.updateEngine(0, false, false);
       this.audio.updatePoliceSiren(0, false, 0);
       this.audio.setAmbienceLevel(0.14);
@@ -360,11 +420,11 @@ export class SceneManager {
       this.vehicles.resetParked();
       this.level.setFocusFloor(0);
       this.cameraYaw = 0.25;
-      this.cameraPitch = 0.56;
+      this.cameraPitch = 0.54;
       this.camPosSmooth.set(
         this.characters.maraPos.x + 3,
-        6.2,
-        this.characters.maraPos.z + 9.5
+        6.0,
+        this.characters.maraPos.z + 9.2
       );
       this.camLookSmooth.set(this.characters.maraPos.x, 1.4, this.characters.maraPos.z - 2);
       this.audio.updateEngine(0, false, false);
@@ -373,10 +433,11 @@ export class SceneManager {
     } else if (phase === 'escape') {
       this.level.setFocusFloor(0);
       this.level.setPowerDisabled(false);
+      this.renderPipeline?.setPowerDisabled(false);
       this.vehicles.startEscape(store.escapeState?.pursuitHeat ?? 55);
       const cx = this.vehicles.carPos.x;
       const cz = this.vehicles.carPos.z;
-      this.camPosSmooth.set(cx - 10, 4.4, cz);
+      this.camPosSmooth.set(cx - 10, 4.2, cz);
       this.camLookSmooth.set(cx + 6, 1.2, cz);
       this.audio.setAmbienceLevel(0.08);
     } else {
@@ -395,7 +456,8 @@ export class SceneManager {
     if (nextFloor !== undefined && nextFloor !== this.characters.maraFloor) {
       this.characters.maraFloor = nextFloor;
       this.level.setFocusFloor(nextFloor);
-      this.audio.playFootstep(false);
+      this.renderPipeline?.setIndoorCutaway(nextFloor < 0);
+      this.audio.playFootstep(false, 'stone');
     }
   }
 
@@ -414,6 +476,7 @@ export class SceneManager {
       if (code === 'KeyF') {
         ev.preventDefault();
         this.binocularsActive = !this.binocularsActive;
+        this.renderPipeline?.setBinocularsActive(this.binocularsActive);
         this.audio.playRadioBeep(false);
         store.setScoutingState({ binocularsActive: this.binocularsActive });
       } else if (code === 'KeyE') {
@@ -444,6 +507,8 @@ export class SceneManager {
     } else if (store.phase === 'escape') {
       if (code === 'Space') {
         ev.preventDefault();
+      } else if (code === 'KeyL' && this.vehicles) {
+        this.vehicles.toggleHeadlights(this.audio);
       }
     }
   };
@@ -487,6 +552,7 @@ export class SceneManager {
     if (ev.button === 2) {
       if (this.rightMouseDown && !this.rightMouseMoved && store.phase === 'scouting') {
         this.binocularsActive = !this.binocularsActive;
+        this.renderPipeline?.setBinocularsActive(this.binocularsActive);
         this.audio.playRadioBeep(false);
         store.setScoutingState({ binocularsActive: this.binocularsActive });
       }
@@ -538,10 +604,31 @@ export class SceneManager {
     if (!this.renderer) return;
     const w = Math.max(320, this.container.clientWidth || window.innerWidth);
     const h = Math.max(240, this.container.clientHeight || window.innerHeight);
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h, false);
+    if (this.renderPipeline) {
+      this.renderPipeline.resize(w, h);
+    } else {
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h, false);
+    }
   };
+
+  /**
+   * True wall-occluded scouting check! Cannot X-ray through solid exterior,
+   * interior, or baroque walls (glass windows & perimeter fences allow clear sight!).
+   */
+  private hasScoutingSightline(targetPos: Vec2, targetFloor: FloorId): boolean {
+    if (!this.level || !this.characters) return false;
+    if (targetFloor !== this.characters.maraFloor) {
+      return this.binocularsActive && targetFloor > this.characters.maraFloor;
+    }
+    return hasSolidLineOfSight(
+      this.characters.maraPos,
+      targetPos,
+      targetFloor,
+      this.level.target.walls
+    );
+  }
 
   private findBestScoutingCandidate(): {
     kind: 'node' | 'guard';
@@ -572,21 +659,42 @@ export class SceneManager {
       connectsToPos?: Vec2;
     } | null = null;
 
-    // 1) Check Target Nodes
+    // 1) Check Target Nodes (canonical shared wall-occluded scouting check!)
+    let wallBlockedInAim = false;
     for (const node of target.nodes) {
       if (node.kind === 'getaway_zone') continue;
       if (!this.binocularsActive && node.floor !== floor) continue;
       const d = dist2D(mara.x, mara.z, node.pos.x, node.pos.z);
       if (d > maxRange) continue;
 
+      if (
+        d > 1.6 &&
+        !canScoutNodeFrom({
+          target,
+          observerPos: mara,
+          observerFloor: floor,
+          node,
+          binocularsActive: this.binocularsActive,
+          maxRangeM: maxRange,
+        })
+      ) {
+        if (!intel.discoveredNodeIds.includes(node.id)) {
+          const dot =
+            d > 0.1 ? ((node.pos.x - mara.x) * camDirX + (node.pos.z - mara.z) * camDirZ) / d : 1;
+          if (dot > 0.72 && d < (this.binocularsActive ? 22 : 7.5)) {
+            wallBlockedInAim = true;
+          }
+        }
+        continue;
+      }
+
       const known = intel.discoveredNodeIds.includes(node.id);
-      // Prioritize unknown nodes, or stairs when close
       if (known && node.connectsToFloor === undefined && d > 4.2) continue;
 
       let score = d;
       if (this.binocularsActive && d > 1.5) {
         const dot = ((node.pos.x - mara.x) * camDirX + (node.pos.z - mara.z) * camDirZ) / d;
-        if (dot < 0.52) continue; // Must be roughly inside binocular view
+        if (dot < 0.52) continue;
         score = (1 - dot) * 20 + d * 0.25;
       }
       if (!known) score -= 6.5;
@@ -604,11 +712,12 @@ export class SceneManager {
       }
     }
 
-    // 2) Check Guards for patrol timing
+    // 2) Check Guards for patrol timing (wall-occluded LoS!)
     for (const g of this.guards.getGuardWorldInfo()) {
       if (!this.binocularsActive && g.floor !== floor) continue;
       const d = dist2D(mara.x, mara.z, g.pos.x, g.pos.z);
       if (d > maxRange) continue;
+      if (d > 1.6 && !this.hasScoutingSightline(g.pos, g.floor)) continue;
 
       const timed = intel.timedGuardIds.includes(g.guardId);
       if (timed) continue;
@@ -631,6 +740,7 @@ export class SceneManager {
       }
     }
 
+    this.scoutingBlockedReason = !best && wallBlockedInAim ? 'wall_occluded' : null;
     return best;
   }
 
@@ -644,7 +754,8 @@ export class SceneManager {
         this.characters.maraPos = { ...cand.connectsToPos };
       }
       this.level.setFocusFloor(cand.connectsToFloor);
-      this.audio.playFootstep(false);
+      this.renderPipeline?.setIndoorCutaway(cand.connectsToFloor < 0);
+      this.audio.playFootstep(false, 'stone');
       return;
     }
 
@@ -669,7 +780,6 @@ export class SceneManager {
     const mara = this.characters.maraPos;
     const floor = this.characters.maraFloor;
 
-    // Check getaway car first when close!
     const distCar = dist2D(
       mara.x,
       mara.z,
@@ -733,6 +843,7 @@ export class SceneManager {
           this.characters.maraPos = { ...near.connectsToPos };
         }
         this.level.setFocusFloor(near.connectsToFloor);
+        this.renderPipeline?.setIndoorCutaway(near.connectsToFloor < 0);
         this.characters.manualExecutionControl = true;
         store.updatePlayerLivePos(
           this.characters.maraPos,
@@ -742,6 +853,14 @@ export class SceneManager {
         );
         return;
       }
+    }
+
+    // Open @architect/@ui tactile Lockpicking / Safe Dial / Securion Circuit minigame!
+    const started = store.startMinigame(near.nodeId);
+    if (started) {
+      this.characters.manualExecutionControl = true;
+      this.audio.playLockpickFeedback('click');
+      return;
     }
 
     this.characters.manualExecutionControl = true;
@@ -802,7 +921,6 @@ export class SceneManager {
     const target = this.level.target;
     const intel = store.intelByTarget[target.id];
 
-    // Keyboard camera yaw rotate (Q/C)
     if (phase === 'scouting' || phase === 'executing') {
       if (this.keys.has('KeyQ')) this.cameraYaw += 1.65 * dt;
       if (this.keys.has('KeyC')) this.cameraYaw -= 1.65 * dt;
@@ -816,8 +934,15 @@ export class SceneManager {
       this.tickEscape(dt);
     }
 
-    // Update level visuals (doors, safes, palms, power-cut lights, safehouse beacon)
     const live = store.liveState;
+    const powerDisabled = phase === 'executing' && live ? live.powerDisabled : false;
+    const alarmLevel = phase === 'executing' && live ? live.alarmLevel : 'silent';
+
+    this.renderPipeline?.setPowerDisabled(powerDisabled);
+    this.renderPipeline?.setAlarmIntensity(
+      alarmLevel === 'lockdown' ? 1.0 : alarmLevel === 'alarm' ? 0.72 : 0
+    );
+
     const workingNodeIds = new Set<string>();
     if (phase === 'executing' && live) {
       for (const c of Object.values(live.crew)) {
@@ -848,14 +973,20 @@ export class SceneManager {
       phase,
       intel,
       completedNodeIds: phase === 'executing' && live ? live.completedNodeIds : [],
+      unlockedDoorIds: phase === 'executing' && live ? live.unlockedDoorIds : [],
+      openedContainerIds: phase === 'executing' && live ? live.openedContainerIds : [],
       triggeredHazardIds: phase === 'executing' && live ? live.triggeredHazardNodeIds : [],
-      powerDisabled: phase === 'executing' && live ? live.powerDisabled : false,
-      alarmLevel: phase === 'executing' && live ? live.alarmLevel : 'silent',
+      powerDisabled,
+      alarmLevel,
       highlightedNodeId,
       workingNodeIds,
+      playerPos: this.characters.maraPos,
+      binocularsActive: phase === 'scouting' && this.binocularsActive,
     });
 
-    this.guards.update({
+    const activePlan = store.plansByTarget[target.id];
+    const maraLoadout = activePlan?.forensicLoadoutByCrew?.mara;
+    const guardRes = this.guards.update({
       dt,
       timeSec: this.elapsedSec,
       phase,
@@ -863,12 +994,47 @@ export class SceneManager {
       intel,
       liveGuards: phase === 'executing' ? live?.guards : undefined,
       liveCameras: phase === 'executing' ? live?.cameras : undefined,
-      powerDisabled: phase === 'executing' && live ? live.powerDisabled : false,
+      powerDisabled,
       timingGuardId:
         phase === 'scouting' && this.scanTargetKind === 'guard'
           ? this.scanTargetId
           : null,
+      liveState: phase === 'executing' ? live ?? undefined : undefined,
+      crewById: store.crew,
+      forensicLoadoutByCrew: activePlan?.forensicLoadoutByCrew,
+      runInternalAI: phase === 'executing',
+      playerPos: this.characters.maraPos,
+      playerFloor: this.characters.maraFloor,
+      playerSneaking: this.characters.maraSneaking,
+      playerSpeed: this.characters.maraSpeed,
+      playerWearingMask: maraLoadout?.mask ?? false,
+      playerDarkClothing: maraLoadout?.darkClothing ?? false,
+      binocularsActive: phase === 'scouting' && this.binocularsActive,
+      audio: this.audio,
     });
+
+    if (phase === 'executing' && live) {
+      this.hudSyncTimer += dt;
+      const urgentGuardChange =
+        guardRes.events.length > 0 ||
+        guardRes.triggersCentralAlarm ||
+        guardRes.newEvidence.length > 0;
+      if (urgentGuardChange || this.hudSyncTimer >= 0.08) {
+        this.hudSyncTimer = 0;
+        store.syncLiveGuards(guardRes.guards);
+        store.syncStealthTelemetry({
+          ...guardRes.stealthTelemetry,
+          lightExposure: Math.round(this.currentLightExposure * 100) / 100,
+        });
+      }
+      for (const draft of guardRes.newEvidence) {
+        store.recordWitnessEvidence(draft);
+      }
+      if (guardRes.triggersCentralAlarm) {
+        const callout = guardRes.events.find((e) => e.triggersCentralAlarm)?.calloutText;
+        store.triggerAlarmExternal(callout ?? 'Wachmann funkte Zentrale an');
+      }
+    }
 
     this.characters.updateVisuals({
       dt,
@@ -879,18 +1045,159 @@ export class SceneManager {
       liveCrew: phase === 'executing' ? live?.crew : undefined,
       maraScanProgress: phase === 'scouting' ? this.scanProgress : 0,
       maraInteractProgress: phase === 'executing' ? this.interactProgress : 0,
+      binocularsActive: phase === 'scouting' && this.binocularsActive,
     });
 
     if (phase !== 'escape') {
       this.vehicles.updateIdle(this.elapsedSec);
     }
 
+    // Living right-hand Salou / Dresden night traffic across all 3D modes
+    this.traffic?.update({
+      dt,
+      timeSec: this.elapsedSec,
+      phase,
+      playerCarPos: this.vehicles.carPos,
+      playerCarVel: { x: this.vehicles.vx, z: this.vehicles.vz },
+      policeUnits: this.vehicles.getPoliceUnits(),
+      cityBoxColliders: this.level.cityBoxColliders,
+    });
+
+    // Living Salou / Dresden evening pedestrians & realistic witness evidence into Die Akte
+    if (this.pedestrians) {
+      const plan = store.plansByTarget[target.id];
+      const pedActors: PedestrianStimulusActor[] = [];
+
+      if (phase === 'scouting') {
+        const maraLoadout = plan?.forensicLoadoutByCrew?.mara;
+        pedActors.push({
+          id: 'mara',
+          crewId: 'mara',
+          pos: this.characters.maraPos,
+          floor: this.characters.maraFloor,
+          sneaking: this.characters.maraSneaking,
+          speed: this.characters.maraSpeed,
+          wearingMask: maraLoadout?.mask ?? false,
+          wearingDisguise: store.crew.mara.equippedTools.includes('disguise_kit'),
+          lightExposure: this.currentLightExposure,
+        });
+      } else if (phase === 'executing' && live) {
+        for (const c of Object.values(live.crew)) {
+          if (c.state === 'extracted' || c.state === 'caught') continue;
+          const loadout = plan?.forensicLoadoutByCrew?.[c.crewId];
+          pedActors.push({
+            id: c.crewId,
+            crewId: c.crewId,
+            pos: c.pos,
+            floor: c.floor,
+            sneaking: c.sneaking,
+            speed: c.speed,
+            wearingMask: loadout?.mask ?? false,
+            wearingDisguise: store.crew[c.crewId]?.equippedTools.includes('disguise_kit') ?? false,
+            carryingLoot: c.carryingLootEur > 0,
+            doingOvertCrime: c.state === 'working' || c.state === 'deviating',
+            lightExposure: this.level.getLightExposureAt(c.pos, c.floor, powerDisabled),
+          });
+        }
+      }
+
+      const brokenGlassPositions =
+        phase === 'executing' && live
+          ? live.brokenGlassNodes
+              .map((nid) => target.nodes.find((n) => n.id === nid)?.pos)
+              .filter((p): p is Vec2 => Boolean(p))
+          : [];
+
+      const pedNoiseEvents: PedestrianNoiseEvent[] =
+        phase === 'executing' && live
+          ? live.noiseEvents.map((ne) => ({
+              pos: ne.pos,
+              floor: ne.floor,
+              radiusM: ne.radiusM,
+              intensity: ne.noiseDb,
+              kind: ne.label.toLowerCase().includes('glas')
+                ? 'glass_break'
+                : ne.label.toLowerCase().includes('brech')
+                  ? 'crowbar'
+                  : 'footstep',
+            }))
+          : [];
+
+      const pedRes = this.pedestrians.update({
+        dt,
+        timeSec: this.elapsedSec,
+        phase,
+        focusFloor: this.characters.maraFloor,
+        alarmLevel,
+        powerDisabled,
+        actors: pedActors,
+        noiseEvents: pedNoiseEvents,
+        brokenGlassPositions,
+        playerCarPos: this.vehicles.carPos,
+        playerCarSpeedKmh: this.vehicles.speedKmh,
+        playerCarHeadlightsOn: this.vehicles.headlightsOn,
+        playerCarDrifting: this.vehicles.drifting,
+        cityBoxColliders: this.level.cityBoxColliders,
+      });
+
+      for (const draft of pedRes.newWitnessEvidence) {
+        store.recordWitnessEvidence(draft);
+      }
+      if (pedRes.witnessAlertTriggered && phase === 'executing') {
+        this.audio.playGuardRadioCall();
+        store.triggerAlarmExternal('Passant verständigte die Polizei');
+      }
+    }
+
     this.updateCamera(dt, phase);
 
-    if (this.renderer) {
+    const focusPos =
+      phase === 'escape'
+        ? { x: this.vehicles.carPos.x, y: 0, z: this.vehicles.carPos.z }
+        : {
+            x: this.characters.maraPos.x,
+            y: this.characters.maraFloor * target.floorHeightM,
+            z: this.characters.maraPos.z,
+          };
+
+    if (this.renderPipeline) {
+      this.renderPipeline.render(dt, focusPos);
+    } else if (this.renderer) {
       this.renderer.render(this.scene, this.camera);
     }
   };
+
+  private getDoorSplitForFloor(
+    target: HeistTarget,
+    floor: FloorId,
+    phase: 'scouting' | 'executing',
+    completedNodeIds: string[],
+    unlockedDoorIds: string[]
+  ): { unlocked: Vec2[]; locked: Vec2[] } {
+    const unlocked: Vec2[] = [];
+    const locked: Vec2[] = [];
+    const openSet = new Set([...completedNodeIds, ...unlockedDoorIds]);
+
+    for (const n of target.nodes) {
+      if (n.floor !== floor) continue;
+      if (
+        n.kind === 'entry_door' ||
+        n.kind === 'entry_service' ||
+        n.kind === 'entry_window' ||
+        n.kind === 'lock'
+      ) {
+        // In Scouting, front shop doors are closed/locked after hours — Mara must observe through glass/binoculars!
+        // In Executing, doors are physically SOLID until actually unlocked!
+        const isUnlocked = phase === 'executing' && openSet.has(n.id);
+        if (isUnlocked) {
+          unlocked.push(n.pos);
+        } else {
+          locked.push(n.pos);
+        }
+      }
+    }
+    return { unlocked, locked };
+  }
 
   private tickScouting(dt: number, target: HeistTarget): void {
     if (!this.level || !this.characters) return;
@@ -904,9 +1211,7 @@ export class SceneManager {
       (this.keys.has('KeyA') || this.keys.has('ArrowLeft') ? 1 : 0);
     const sneaking = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
 
-    const doorPositions = target.nodes
-      .filter((n) => n.isAccessPoint && n.floor === this.characters!.maraFloor)
-      .map((n) => n.pos);
+    const doors = this.getDoorSplitForFloor(target, this.characters.maraFloor, 'scouting', [], []);
 
     const moved = this.characters.moveMaraByInput({
       dt,
@@ -915,14 +1220,20 @@ export class SceneManager {
       sneaking,
       cameraYawRad: this.cameraYaw,
       wallColliders: this.level.wallColliders,
-      allowPassThroughDoors: true,
-      doorPositions,
+      unlockedDoorPositions: doors.unlocked,
+      lockedDoorPositions: doors.locked,
     });
     if (moved) {
-      this.audio.playFootstep(sneaking);
+      const surface = this.level.getSurfaceAt(this.characters.maraPos, this.characters.maraFloor);
+      this.audio.playFootstep(sneaking, surface);
     }
 
-    // Automatically scout any room Mara walks into!
+    this.currentLightExposure = this.level.getLightExposureAt(
+      this.characters.maraPos,
+      this.characters.maraFloor,
+      false
+    );
+
     for (const room of target.rooms) {
       if (room.floor !== this.characters.maraFloor) continue;
       if (
@@ -938,7 +1249,6 @@ export class SceneManager {
       }
     }
 
-    // Scanning / Guard Timing progress
     const cand = this.findBestScoutingCandidate();
     const holdingScan = this.keys.has('KeyE') || this.scanAutoLock;
     const hasScannerRig = store.workshopUpgrades.some(
@@ -957,7 +1267,11 @@ export class SceneManager {
 
       if (this.scanProgress >= 1) {
         if (cand.kind === 'node') {
-          store.discoverNode(target.id, cand.id);
+          store.discoverNode(target.id, cand.id, {
+            pos: this.characters.maraPos,
+            floor: this.characters.maraFloor,
+            binocularsActive: this.binocularsActive,
+          });
         } else {
           store.timeGuardPatrol(target.id, cand.id);
         }
@@ -976,14 +1290,13 @@ export class SceneManager {
       }
     }
 
-    // Prompt overlay feedback
     if (cand) {
       if (!cand.alreadyKnown) {
         this.emitFeedback(
           cand.kind === 'guard'
             ? `[E] Wachrunde stoppen: ${cand.label}`
             : `[E] Auskundschaften: ${cand.label}`,
-          this.binocularsActive ? 'Fernglas aktiv · gedrückt halten' : 'F / Rechtsklick für Fernglas',
+          this.binocularsActive ? 'Fernglas aktiv · Sichtlinie frei' : 'F / Rechtsklick für Fernglas',
           this.scanProgress
         );
       } else if (cand.connectsToFloor !== undefined) {
@@ -999,7 +1312,6 @@ export class SceneManager {
       this.emitFeedback(null, null, 0);
     }
 
-    // Throttled store HUD sync (~15 Hz)
     this.hudSyncTimer += dt;
     if (this.hudSyncTimer >= 0.065) {
       this.hudSyncTimer = 0;
@@ -1013,6 +1325,7 @@ export class SceneManager {
         guardTimingProgress: cand?.kind === 'guard' ? this.scanProgress : 0,
         playerPos: { ...this.characters.maraPos },
         playerFloor: this.characters.maraFloor,
+        blockedReason: this.scoutingBlockedReason,
       });
     }
   }
@@ -1021,61 +1334,79 @@ export class SceneManager {
     if (!this.level || !this.characters) return;
     const store = useGameStore.getState();
 
-    const fwd =
-      (this.keys.has('KeyW') || this.keys.has('ArrowUp') ? 1 : 0) -
-      (this.keys.has('KeyS') || this.keys.has('ArrowDown') ? 1 : 0);
-    const right =
-      (this.keys.has('KeyD') || this.keys.has('ArrowRight') ? 1 : 0) -
-      (this.keys.has('KeyA') || this.keys.has('ArrowLeft') ? 1 : 0);
+    const liveBefore = store.liveState;
+    const activeMinigame = liveBefore?.activeMinigame ?? null;
+
+    const fwd = activeMinigame
+      ? 0
+      : (this.keys.has('KeyW') || this.keys.has('ArrowUp') ? 1 : 0) -
+        (this.keys.has('KeyS') || this.keys.has('ArrowDown') ? 1 : 0);
+    const right = activeMinigame
+      ? 0
+      : (this.keys.has('KeyD') || this.keys.has('ArrowRight') ? 1 : 0) -
+        (this.keys.has('KeyA') || this.keys.has('ArrowLeft') ? 1 : 0);
     const sneaking = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
 
-    const liveBefore = store.liveState;
-    const doorPositions = target.nodes
-      .filter((n) => n.isAccessPoint && n.floor === this.characters!.maraFloor)
-      .map((n) => n.pos);
+    const doors = this.getDoorSplitForFloor(
+      target,
+      this.characters.maraFloor,
+      'executing',
+      liveBefore?.completedNodeIds ?? [],
+      liveBefore?.unlockedDoorIds ?? []
+    );
 
     if (Math.abs(fwd) > 0.05 || Math.abs(right) > 0.05) {
       this.characters.manualExecutionControl = true;
     }
 
     if (this.characters.manualExecutionControl) {
+      const maraLoot = liveBefore?.crew.mara?.carryingLootEur ?? 0;
+      const carryWeight = clamp(maraLoot / 250000, 0, 1);
       const moved = this.characters.moveMaraByInput({
         dt,
         forwardInput: fwd,
         rightInput: right,
         sneaking,
+        carryingWeight: carryWeight,
         cameraYawRad: this.cameraYaw,
         wallColliders: this.level.wallColliders,
-        allowPassThroughDoors: true,
-        doorPositions,
+        unlockedDoorPositions: doors.unlocked,
+        lockedDoorPositions: doors.locked,
       });
       if (moved) {
-        this.audio.playFootstep(sneaking);
+        const surface = this.level.getSurfaceAt(this.characters.maraPos, this.characters.maraFloor);
+        this.audio.playFootstep(sneaking, surface);
       }
       store.updatePlayerLivePos(
         this.characters.maraPos,
         this.characters.maraFloor,
         this.characters.getMaraHeadingDeg(),
-        sneaking
+        sneaking,
+        this.characters.maraSpeed
       );
     }
 
-    // Advance pure-TS simulation engine for AI crew, guards, cameras, deviations, alarms!
+    this.currentLightExposure = this.level.getLightExposureAt(
+      this.characters.maraPos,
+      this.characters.maraFloor,
+      liveBefore?.powerDisabled ?? false
+    );
+
     store.tickLiveExecution(dt, {
       playerSteeredExternally: this.characters.manualExecutionControl,
+      skipGuardTick: true,
     });
 
     const liveAfter = useGameStore.getState().liveState;
     if (!liveAfter) return;
 
-    // Keep floor cutaway synced if Mara changes floor on auto-track
     if (!this.characters.manualExecutionControl && liveAfter.crew.mara) {
       if (liveAfter.crew.mara.floor !== this.characters.maraFloor) {
         this.level.setFocusFloor(liveAfter.crew.mara.floor);
+        this.renderPipeline?.setIndoorCutaway(liveAfter.crew.mara.floor < 0);
       }
     }
 
-    // Audio event triggers from live state changes
     if (liveAfter.powerDisabled && !this.prevPowerDisabled) {
       this.audio.playPowerCut();
     }
@@ -1086,6 +1417,11 @@ export class SceneManager {
     }
     this.prevLootTotal = liveAfter.totalLootEur;
 
+    if (liveAfter.brokenGlassNodes.length > this.prevBrokenGlassCount) {
+      this.audio.playGlassBreak();
+    }
+    this.prevBrokenGlassCount = liveAfter.brokenGlassNodes.length;
+
     if (liveAfter.radioLog.length > this.prevRadioCount) {
       this.audio.playRadioBeep(liveAfter.abortActive || liveAfter.planBActive);
     }
@@ -1095,9 +1431,17 @@ export class SceneManager {
       this.audio.playAlarmPulse();
     }
 
-    // Interactive work progress for Mara pressing E on a nearby node
+    // Play muffled guard radio crackle if any guard is in 'radioing' state
+    const anyRadioing = liveAfter.guards.some(
+      (g) => (g.state as string) === 'radioing'
+    );
+    if (anyRadioing) {
+      this.audio.playGuardRadioCall();
+    }
+
     const near = this.findNearestExecutingNode();
     if (
+      !activeMinigame &&
       (this.keys.has('KeyE') || this.interactAutoLock) &&
       near &&
       !near.isGetaway &&
@@ -1120,8 +1464,9 @@ export class SceneManager {
       }
     }
 
-    // Contextual prompt
-    if (near) {
+    if (activeMinigame) {
+      this.emitFeedback(null, null, 0);
+    } else if (near) {
       this.emitFeedback(
         near.isGetaway ? '[E] Einsteigen & Flucht starten!' : `[E] ${near.label}`,
         near.isGetaway
@@ -1160,6 +1505,10 @@ export class SceneManager {
       handbrake,
       cityBoxColliders: this.level.cityBoxColliders,
       audio: this.audio,
+      trafficObstacles: this.traffic?.getObstacles(),
+      onTrafficCollision: (id, dvx, dvz, impactSpeed) => {
+        this.traffic?.applyCollisionImpulse(id, dvx, dvz, impactSpeed);
+      },
     });
 
     this.hudSyncTimer += dt;
@@ -1178,6 +1527,8 @@ export class SceneManager {
       this.audio.updateEngine(0, false, false);
       this.audio.updatePoliceSiren(0, false, 0);
       store.finishEscape(false);
+    } else if (res.statusHint) {
+      this.emitFeedback(res.statusHint, '[L] Scheinwerfer · [Space] Drift', 0);
     } else {
       this.emitFeedback(null, null, 0);
     }
@@ -1197,9 +1548,9 @@ export class SceneManager {
       const fwdX = Math.sin(rot);
       const fwdZ = Math.cos(rot);
 
-      const speedNorm = clamp(this.vehicles.speedKmh / 120, 0, 1);
-      const dist = 9.2 + speedNorm * 2.2;
-      const height = 4.1 + speedNorm * 0.7;
+      const speedNorm = clamp(this.vehicles.speedKmh / 130, 0, 1);
+      const dist = 8.6 + speedNorm * 2.1;
+      const height = 3.6 + speedNorm * 0.65;
 
       const desiredPos = new THREE.Vector3(
         carX - fwdX * dist,
@@ -1207,15 +1558,15 @@ export class SceneManager {
         carZ - fwdZ * dist
       );
       const desiredLook = new THREE.Vector3(
-        carX + fwdX * (5.5 + speedNorm * 3.5),
-        1.25,
-        carZ + fwdZ * (5.5 + speedNorm * 3.5)
+        carX + fwdX * (5.8 + speedNorm * 3.8),
+        1.15,
+        carZ + fwdZ * (5.8 + speedNorm * 3.8)
       );
 
       this.camPosSmooth.lerp(desiredPos, 1 - Math.exp(-6.5 * dt));
       this.camLookSmooth.lerp(desiredLook, 1 - Math.exp(-9.0 * dt));
 
-      const targetFov = 56 + speedNorm * 13;
+      const targetFov = 54 + speedNorm * 14;
       this.camera.fov = damp(this.camera.fov, targetFov, 6, dt);
       this.camera.updateProjectionMatrix();
       this.camera.position.copy(this.camPosSmooth);
@@ -1229,29 +1580,28 @@ export class SceneManager {
       const mz = this.characters.maraPos.z;
 
       const isBino = phase === 'scouting' && this.binocularsActive;
-      const targetFov = isBino ? 25 : 54;
+      const targetFov = isBino ? 24 : 52;
       if (Math.abs(this.camera.fov - targetFov) > 0.05) {
         this.camera.fov = damp(this.camera.fov, targetFov, 9, dt);
         this.camera.updateProjectionMatrix();
       }
 
       if (isBino) {
-        // Elevated over-shoulder binocular vantage
         const lookDist = 18;
         const dirX = -Math.sin(this.cameraYaw);
         const dirZ = -Math.cos(this.cameraYaw);
-        const desiredPos = new THREE.Vector3(mx - dirX * 0.9, fy + 1.95, mz - dirZ * 0.9);
+        const desiredPos = new THREE.Vector3(mx - dirX * 0.9, fy + 1.9, mz - dirZ * 0.9);
         const desiredLook = new THREE.Vector3(
           mx + dirX * lookDist,
-          fy + 1.55 - (this.cameraPitch - 0.35) * 4.5,
+          fy + 1.5 - (this.cameraPitch - 0.35) * 4.5,
           mz + dirZ * lookDist
         );
         this.camPosSmooth.lerp(desiredPos, 1 - Math.exp(-12 * dt));
         this.camLookSmooth.lerp(desiredLook, 1 - Math.exp(-12 * dt));
       } else {
-        const dist = phase === 'executing' ? 9.4 : 8.2;
+        const dist = phase === 'executing' ? 8.8 : 7.6;
         const horiz = Math.cos(this.cameraPitch) * dist;
-        const vert = Math.sin(this.cameraPitch) * dist + 1.5;
+        const vert = Math.sin(this.cameraPitch) * dist + 1.4;
 
         const desiredPos = new THREE.Vector3(
           mx + Math.sin(this.cameraYaw) * horiz,
@@ -1290,10 +1640,14 @@ export class SceneManager {
           assetsReady: assetRegistry.isReady(),
           loadedModels: assetRegistry.loadedModelKeys,
           loadedTextures: assetRegistry.loadedTextureKeys,
+          loadedPbrSets: assetRegistry.loadedPbrSetKeys,
           powerDisabled: s.liveState?.powerDisabled ?? false,
           alarmLevel: s.liveState?.alarmLevel ?? 'silent',
           guardCount: this.guards?.getGuardWorldInfo().length ?? 0,
           crewCount: s.liveState ? Object.keys(s.liveState.crew).length : 1,
+          lightExposure: Math.round(this.currentLightExposure * 100) / 100,
+          renderQuality: this.renderQuality,
+          renderDiagnostics: this.renderPipeline?.getDiagnostics() ?? null,
         };
       },
       setPhase: (phase) => {
@@ -1302,14 +1656,19 @@ export class SceneManager {
       quickPlay: (targetId, mode = 'executing') => {
         useGameStore.getState().quickPlayTarget(targetId, mode);
       },
+      setQuality: (quality) => {
+        this.setQuality(quality);
+      },
       setCamera: (pos, lookAt) => {
         this.cameraOverride = {
           pos: new THREE.Vector3(pos[0], pos[1], pos[2]),
           lookAt: new THREE.Vector3(lookAt[0], lookAt[1], lookAt[2]),
         };
-        if (this.renderer) {
-          this.camera.position.copy(this.cameraOverride.pos);
-          this.camera.lookAt(this.cameraOverride.lookAt);
+        this.camera.position.copy(this.cameraOverride.pos);
+        this.camera.lookAt(this.cameraOverride.lookAt);
+        if (this.renderPipeline) {
+          this.renderPipeline.render(0.016);
+        } else if (this.renderer) {
           this.renderer.render(this.scene, this.camera);
         }
       },
@@ -1357,10 +1716,14 @@ export class SceneManager {
     this.unsubStore?.();
     this.unsubAssets?.();
 
+    this.unregisterLevelPipelineAssets();
     this.level?.dispose();
     this.guards?.dispose();
+    this.pedestrians?.dispose();
     this.characters?.dispose();
     this.vehicles?.dispose();
+    this.traffic?.dispose();
+    this.renderPipeline?.dispose();
     this.audio.dispose();
 
     if (this.renderer) {

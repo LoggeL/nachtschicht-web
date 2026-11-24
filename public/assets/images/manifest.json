@@ -1,7 +1,203 @@
 {
-  "version": 1,
-  "style": "Mediterranean Night Noir",
-  "generatedWith": "codex-cli imagegen (gpt-image-2)",
+  "version": 2,
+  "style": "35mm Photorealistic Night Noir Cinema",
+  "generatedWith": "codex-cli imagegen (gpt-image-2) + NumPy/PIL PBR synthesis",
+  "images": {
+    "title_salou_night": "/assets/images/title_salou_night.webp",
+    "story_bar_salou": "/assets/images/story_bar_salou.webp",
+    "story_dresden_vault": "/assets/images/story_dresden_vault.webp",
+    "portrait_mara": "/assets/images/portrait_mara.webp",
+    "portrait_jupp": "/assets/images/portrait_jupp.webp",
+    "portrait_jule": "/assets/images/portrait_jule.webp",
+    "portrait_toni": "/assets/images/portrait_toni.webp",
+    "portrait_rico": "/assets/images/portrait_rico.webp",
+    "portrait_ferrer": "/assets/images/portrait_ferrer.webp",
+    "portrait_lassen": "/assets/images/portrait_lassen.webp"
+  },
+  "textures": {
+    "wet_asphalt": "/assets/textures/wet_asphalt.webp",
+    "salou_stucco": "/assets/textures/salou_stucco.webp",
+    "stone_plaza": "/assets/textures/stone_plaza.webp",
+    "dresden_sandstone": "/assets/textures/dresden_sandstone_albedo.webp",
+    "interior_marble": "/assets/textures/interior_marble_albedo.webp",
+    "brushed_steel": "/assets/textures/brushed_steel_albedo.webp",
+    "brick_alley": "/assets/textures/brick_alley_albedo.webp",
+    "blueprint_paper": "/assets/textures/blueprint_paper.webp",
+    "env_salou_night": "/assets/textures/env_salou_night.webp",
+    "env_dresden_night": "/assets/textures/env_dresden_night.webp"
+  },
+  "pbrSets": {
+    "wet_asphalt": {
+      "albedo": "/assets/textures/wet_asphalt_albedo.webp",
+      "normal": "/assets/textures/wet_asphalt_normal.webp",
+      "roughness": "/assets/textures/wet_asphalt_roughness.webp",
+      "ao": "/assets/textures/wet_asphalt_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.0,
+        "normalScale": 0.9,
+        "envMapIntensity": 1.35
+      },
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask"
+    },
+    "salou_stucco": {
+      "albedo": "/assets/textures/salou_stucco_albedo.webp",
+      "normal": "/assets/textures/salou_stucco_normal.webp",
+      "roughness": "/assets/textures/salou_stucco_roughness.webp",
+      "ao": "/assets/textures/salou_stucco_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.0,
+        "normalScale": 0.85,
+        "envMapIntensity": 0.6
+      },
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall"
+    },
+    "stone_plaza": {
+      "albedo": "/assets/textures/stone_plaza_albedo.webp",
+      "normal": "/assets/textures/stone_plaza_normal.webp",
+      "roughness": "/assets/textures/stone_plaza_roughness.webp",
+      "ao": "/assets/textures/stone_plaza_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.0,
+        "normalScale": 1.0,
+        "envMapIntensity": 1.0
+      },
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving"
+    },
+    "dresden_sandstone": {
+      "albedo": "/assets/textures/dresden_sandstone_albedo.webp",
+      "normal": "/assets/textures/dresden_sandstone_normal.webp",
+      "roughness": "/assets/textures/dresden_sandstone_roughness.webp",
+      "ao": "/assets/textures/dresden_sandstone_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.0,
+        "normalScale": 1.15,
+        "envMapIntensity": 0.65
+      },
+      "usage": "Photorealistic seamless PBR baroque Dresden Elbsandstein carved ashlar sandstone masonry with dark age patina"
+    },
+    "interior_marble": {
+      "albedo": "/assets/textures/interior_marble_albedo.webp",
+      "normal": "/assets/textures/interior_marble_normal.webp",
+      "roughness": "/assets/textures/interior_marble_roughness.webp",
+      "ao": "/assets/textures/interior_marble_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.05,
+        "normalScale": 0.45,
+        "envMapIntensity": 1.45
+      },
+      "usage": "Photorealistic seamless PBR luxury polished veined dark Nero Marquina marble floor tiles"
+    },
+    "brushed_steel": {
+      "albedo": "/assets/textures/brushed_steel_albedo.webp",
+      "normal": "/assets/textures/brushed_steel_normal.webp",
+      "roughness": "/assets/textures/brushed_steel_roughness.webp",
+      "ao": "/assets/textures/brushed_steel_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.88,
+        "normalScale": 0.55,
+        "envMapIntensity": 1.35
+      },
+      "usage": "Photorealistic seamless PBR machined brushed stainless vault steel for safes, vault doors, and security panels"
+    },
+    "brick_alley": {
+      "albedo": "/assets/textures/brick_alley_albedo.webp",
+      "normal": "/assets/textures/brick_alley_normal.webp",
+      "roughness": "/assets/textures/brick_alley_roughness.webp",
+      "ao": "/assets/textures/brick_alley_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "materialHint": {
+        "roughness": 1.0,
+        "metalness": 0.0,
+        "normalScale": 1.2,
+        "envMapIntensity": 0.75
+      },
+      "usage": "Photorealistic seamless PBR damp gritty Mediterranean service alley weathered brick masonry"
+    }
+  },
+  "environments": {
+    "env_salou_night": "/assets/textures/env_salou_night.webp",
+    "salou": "/assets/textures/env_salou_night.webp",
+    "env_dresden_night": "/assets/textures/env_dresden_night.webp",
+    "dresden": "/assets/textures/env_dresden_night.webp"
+  },
+  "blenderMaterials": {
+    "leather_dark": {
+      "albedo": "/assets/textures/leather_dark_albedo.webp",
+      "normal": "/assets/textures/leather_dark_normal.webp",
+      "roughness": "/assets/textures/leather_dark_roughness.webp",
+      "ao": "/assets/textures/leather_dark_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "usage": "Seamless photorealistic dark full-grain calfskin jacket leather texture for Blender character models"
+    },
+    "tactical_fabric": {
+      "albedo": "/assets/textures/tactical_fabric_albedo.webp",
+      "normal": "/assets/textures/tactical_fabric_normal.webp",
+      "roughness": "/assets/textures/tactical_fabric_roughness.webp",
+      "ao": "/assets/textures/tactical_fabric_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "usage": "Seamless photorealistic dark ripstop tactical nylon/cotton weave texture for Blender character gear"
+    },
+    "wool_tweed": {
+      "albedo": "/assets/textures/wool_tweed_albedo.webp",
+      "normal": "/assets/textures/wool_tweed_normal.webp",
+      "roughness": "/assets/textures/wool_tweed_roughness.webp",
+      "ao": "/assets/textures/wool_tweed_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "usage": "Seamless photorealistic charcoal-olive herringbone wool tweed texture for Jupp's coat and flatcap"
+    },
+    "palm_bark": {
+      "albedo": "/assets/textures/palm_bark_albedo.webp",
+      "normal": "/assets/textures/palm_bark_normal.webp",
+      "roughness": "/assets/textures/palm_bark_roughness.webp",
+      "ao": "/assets/textures/palm_bark_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "usage": "Seamless photorealistic Mediterranean Canary Island palm tree trunk bark texture for Blender palms"
+    },
+    "wood_shutter": {
+      "albedo": "/assets/textures/wood_shutter_albedo.webp",
+      "normal": "/assets/textures/wood_shutter_normal.webp",
+      "roughness": "/assets/textures/wood_shutter_roughness.webp",
+      "ao": "/assets/textures/wood_shutter_ao.webp",
+      "width": 1024,
+      "height": 1024,
+      "tileable": true,
+      "usage": "Seamless photorealistic weathered Mediterranean painted timber wood grain for Salou shutters and doors"
+    }
+  },
   "assets": {
     "title_salou_night": {
       "url": "/assets/images/title_salou_night.webp",
@@ -9,79 +205,9 @@
       "width": 1440,
       "height": 810,
       "format": "webp",
-      "bytes": 181118,
+      "bytes": 173442,
       "tileable": false,
-      "usage": "Title screen widescreen hero backdrop (16:9)"
-    },
-    "portrait_mara": {
-      "url": "/assets/images/portrait_mara.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 44684,
-      "tileable": false,
-      "usage": "Character portrait for Mara Voss (player protagonist, ex-security engineer)"
-    },
-    "portrait_jupp": {
-      "url": "/assets/images/portrait_jupp.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 55126,
-      "tileable": false,
-      "usage": "Character portrait for Jupp Kowalke (68, old-school German safecracker mentor)"
-    },
-    "portrait_jule": {
-      "url": "/assets/images/portrait_jule.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 52834,
-      "tileable": false,
-      "usage": "Character portrait for Jule (young electronics & alarm specialist)"
-    },
-    "portrait_toni": {
-      "url": "/assets/images/portrait_toni.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 65234,
-      "tileable": false,
-      "usage": "Character portrait for Toni (charismatic Catalan getaway driver)"
-    },
-    "portrait_rico": {
-      "url": "/assets/images/portrait_rico.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 50944,
-      "tileable": false,
-      "usage": "Character portrait for Rico (agile climber & muscle)"
-    },
-    "portrait_ferrer": {
-      "url": "/assets/images/portrait_ferrer.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 45540,
-      "tileable": false,
-      "usage": "Character portrait for Inspectora Núria Ferrer (Catalan police detective, Die Akte antagonist)"
-    },
-    "portrait_lassen": {
-      "url": "/assets/images/portrait_lassen.webp",
-      "category": "portrait",
-      "width": 512,
-      "height": 512,
-      "format": "webp",
-      "bytes": 36998,
-      "tileable": false,
-      "usage": "Character portrait for Henrik Lassen (cold corporate Securion executive)"
+      "usage": "Title screen widescreen photorealistic 35mm film-still hero backdrop (16:9)"
     },
     "story_bar_salou": {
       "url": "/assets/images/story_bar_salou.webp",
@@ -89,9 +215,9 @@
       "width": 1280,
       "height": 720,
       "format": "webp",
-      "bytes": 193660,
+      "bytes": 129994,
       "tileable": false,
-      "usage": "Act 1 story briefing panel: dim Salou bar with blueprints on wax tracing paper"
+      "usage": "Act 1 photorealistic 35mm story still: dim Salou bar briefing over blueprints on wax tracing paper"
     },
     "story_dresden_vault": {
       "url": "/assets/images/story_dresden_vault.webp",
@@ -99,39 +225,445 @@
       "width": 1280,
       "height": 720,
       "format": "webp",
-      "bytes": 262532,
+      "bytes": 133954,
       "tileable": false,
-      "usage": "Act 3 finale story panel: baroque Dresden night silhouette and illuminated fictional royal treasure vault"
+      "usage": "Act 3 finale photorealistic 35mm story still: historic baroque Dresden night view and illuminated fictional treasure vault"
     },
-    "salou_stucco": {
-      "url": "/assets/textures/salou_stucco.webp",
-      "category": "texture",
+    "portrait_mara": {
+      "url": "/assets/images/portrait_mara.webp",
+      "category": "portrait",
       "width": 512,
       "height": 512,
       "format": "webp",
-      "bytes": 35372,
+      "bytes": 28918,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Mara Voss (34, German ex-security engineer)"
+    },
+    "portrait_jupp": {
+      "url": "/assets/images/portrait_jupp.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 35588,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Jupp Kowalke (68, veteran German safecracker)"
+    },
+    "portrait_jule": {
+      "url": "/assets/images/portrait_jule.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 25858,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Jule (24, electronics & alarm specialist)"
+    },
+    "portrait_toni": {
+      "url": "/assets/images/portrait_toni.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 40452,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Toni (31, Catalan getaway driver)"
+    },
+    "portrait_rico": {
+      "url": "/assets/images/portrait_rico.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 32460,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Rico (28, agile climber & heist muscle)"
+    },
+    "portrait_ferrer": {
+      "url": "/assets/images/portrait_ferrer.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 27806,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Inspectora Núria Ferrer (44, Catalan police detective)"
+    },
+    "portrait_lassen": {
+      "url": "/assets/images/portrait_lassen.webp",
+      "category": "portrait",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 18670,
+      "tileable": false,
+      "usage": "Photorealistic 35mm film-still portrait of Henrik Lassen (52, Securion corporate executive)"
+    },
+    "wet_asphalt_albedo": {
+      "url": "/assets/textures/wet_asphalt_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "wet_asphalt",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 344014,
       "tileable": true,
-      "usage": "Seamless tileable 3D surface texture for Salou Mediterranean stucco building walls"
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask (albedo map)"
+    },
+    "wet_asphalt_normal": {
+      "url": "/assets/textures/wet_asphalt_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "wet_asphalt",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 294748,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask (normal map)"
+    },
+    "wet_asphalt_roughness": {
+      "url": "/assets/textures/wet_asphalt_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "wet_asphalt",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 147654,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask (roughness map)"
+    },
+    "wet_asphalt_ao": {
+      "url": "/assets/textures/wet_asphalt_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "wet_asphalt",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 442276,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask (ao map)"
     },
     "wet_asphalt": {
       "url": "/assets/textures/wet_asphalt.webp",
       "category": "texture",
-      "width": 512,
-      "height": 512,
+      "width": 1024,
+      "height": 1024,
       "format": "webp",
-      "bytes": 62620,
+      "bytes": 344014,
       "tileable": true,
-      "usage": "Seamless tileable 3D surface texture for Salou wet night asphalt roads"
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask"
+    },
+    "salou_stucco_albedo": {
+      "url": "/assets/textures/salou_stucco_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "salou_stucco",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 373074,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall (albedo map)"
+    },
+    "salou_stucco_normal": {
+      "url": "/assets/textures/salou_stucco_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "salou_stucco",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 328206,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall (normal map)"
+    },
+    "salou_stucco_roughness": {
+      "url": "/assets/textures/salou_stucco_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "salou_stucco",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 248060,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall (roughness map)"
+    },
+    "salou_stucco_ao": {
+      "url": "/assets/textures/salou_stucco_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "salou_stucco",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 580544,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall (ao map)"
+    },
+    "salou_stucco": {
+      "url": "/assets/textures/salou_stucco.webp",
+      "category": "texture",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 373074,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall"
+    },
+    "stone_plaza_albedo": {
+      "url": "/assets/textures/stone_plaza_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "stone_plaza",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 372290,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving (albedo map)"
+    },
+    "stone_plaza_normal": {
+      "url": "/assets/textures/stone_plaza_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "stone_plaza",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 269392,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving (normal map)"
+    },
+    "stone_plaza_roughness": {
+      "url": "/assets/textures/stone_plaza_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "stone_plaza",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 325982,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving (roughness map)"
+    },
+    "stone_plaza_ao": {
+      "url": "/assets/textures/stone_plaza_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "stone_plaza",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 589786,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving (ao map)"
     },
     "stone_plaza": {
       "url": "/assets/textures/stone_plaza.webp",
       "category": "texture",
-      "width": 512,
-      "height": 512,
+      "width": 1024,
+      "height": 1024,
       "format": "webp",
-      "bytes": 48574,
+      "bytes": 372290,
       "tileable": true,
-      "usage": "Seamless tileable 3D surface texture for Mediterranean promenade and plaza stone paving"
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving"
+    },
+    "dresden_sandstone_albedo": {
+      "url": "/assets/textures/dresden_sandstone_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "dresden_sandstone",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 427754,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR baroque Dresden Elbsandstein carved ashlar sandstone masonry with dark age patina (albedo map)"
+    },
+    "dresden_sandstone_normal": {
+      "url": "/assets/textures/dresden_sandstone_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "dresden_sandstone",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 362914,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR baroque Dresden Elbsandstein carved ashlar sandstone masonry with dark age patina (normal map)"
+    },
+    "dresden_sandstone_roughness": {
+      "url": "/assets/textures/dresden_sandstone_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "dresden_sandstone",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 245712,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR baroque Dresden Elbsandstein carved ashlar sandstone masonry with dark age patina (roughness map)"
+    },
+    "dresden_sandstone_ao": {
+      "url": "/assets/textures/dresden_sandstone_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "dresden_sandstone",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 622134,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR baroque Dresden Elbsandstein carved ashlar sandstone masonry with dark age patina (ao map)"
+    },
+    "interior_marble_albedo": {
+      "url": "/assets/textures/interior_marble_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "interior_marble",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 156074,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR luxury polished veined dark Nero Marquina marble floor tiles (albedo map)"
+    },
+    "interior_marble_normal": {
+      "url": "/assets/textures/interior_marble_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "interior_marble",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 52562,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR luxury polished veined dark Nero Marquina marble floor tiles (normal map)"
+    },
+    "interior_marble_roughness": {
+      "url": "/assets/textures/interior_marble_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "interior_marble",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 50526,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR luxury polished veined dark Nero Marquina marble floor tiles (roughness map)"
+    },
+    "interior_marble_ao": {
+      "url": "/assets/textures/interior_marble_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "interior_marble",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 178982,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR luxury polished veined dark Nero Marquina marble floor tiles (ao map)"
+    },
+    "brushed_steel_albedo": {
+      "url": "/assets/textures/brushed_steel_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "brushed_steel",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 213904,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR machined brushed stainless vault steel for safes, vault doors, and security panels (albedo map)"
+    },
+    "brushed_steel_normal": {
+      "url": "/assets/textures/brushed_steel_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "brushed_steel",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 215662,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR machined brushed stainless vault steel for safes, vault doors, and security panels (normal map)"
+    },
+    "brushed_steel_roughness": {
+      "url": "/assets/textures/brushed_steel_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "brushed_steel",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 111296,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR machined brushed stainless vault steel for safes, vault doors, and security panels (roughness map)"
+    },
+    "brushed_steel_ao": {
+      "url": "/assets/textures/brushed_steel_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "brushed_steel",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 332730,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR machined brushed stainless vault steel for safes, vault doors, and security panels (ao map)"
+    },
+    "brick_alley_albedo": {
+      "url": "/assets/textures/brick_alley_albedo.webp",
+      "category": "pbr_texture",
+      "mapType": "albedo",
+      "material": "brick_alley",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 418012,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR damp gritty Mediterranean service alley weathered brick masonry (albedo map)"
+    },
+    "brick_alley_normal": {
+      "url": "/assets/textures/brick_alley_normal.webp",
+      "category": "pbr_texture",
+      "mapType": "normal",
+      "material": "brick_alley",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 322624,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR damp gritty Mediterranean service alley weathered brick masonry (normal map)"
+    },
+    "brick_alley_roughness": {
+      "url": "/assets/textures/brick_alley_roughness.webp",
+      "category": "pbr_texture",
+      "mapType": "roughness",
+      "material": "brick_alley",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 299254,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR damp gritty Mediterranean service alley weathered brick masonry (roughness map)"
+    },
+    "brick_alley_ao": {
+      "url": "/assets/textures/brick_alley_ao.webp",
+      "category": "pbr_texture",
+      "mapType": "ao",
+      "material": "brick_alley",
+      "width": 1024,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 597016,
+      "tileable": true,
+      "usage": "Photorealistic seamless PBR damp gritty Mediterranean service alley weathered brick masonry (ao map)"
     },
     "blueprint_paper": {
       "url": "/assets/textures/blueprint_paper.webp",
@@ -142,24 +674,28 @@
       "bytes": 7714,
       "tileable": true,
       "usage": "Seamless tileable UI/Reißbrett texture for architectural night blueprint drafting surface"
+    },
+    "env_salou_night": {
+      "url": "/assets/textures/env_salou_night.webp",
+      "category": "environment",
+      "projection": "equirectangular",
+      "width": 2048,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 177960,
+      "tileable": true,
+      "usage": "Seamless 360-degree equirectangular photorealistic night IBL environment map for Salou Costa Daurada (PMREMGenerator)"
+    },
+    "env_dresden_night": {
+      "url": "/assets/textures/env_dresden_night.webp",
+      "category": "environment",
+      "projection": "equirectangular",
+      "width": 2048,
+      "height": 1024,
+      "format": "webp",
+      "bytes": 295884,
+      "tileable": true,
+      "usage": "Seamless 360-degree equirectangular photorealistic night IBL environment map for historic baroque Dresden (PMREMGenerator)"
     }
-  },
-  "images": {
-    "title_salou_night": "/assets/images/title_salou_night.webp",
-    "portrait_mara": "/assets/images/portrait_mara.webp",
-    "portrait_jupp": "/assets/images/portrait_jupp.webp",
-    "portrait_jule": "/assets/images/portrait_jule.webp",
-    "portrait_toni": "/assets/images/portrait_toni.webp",
-    "portrait_rico": "/assets/images/portrait_rico.webp",
-    "portrait_ferrer": "/assets/images/portrait_ferrer.webp",
-    "portrait_lassen": "/assets/images/portrait_lassen.webp",
-    "story_bar_salou": "/assets/images/story_bar_salou.webp",
-    "story_dresden_vault": "/assets/images/story_dresden_vault.webp"
-  },
-  "textures": {
-    "salou_stucco": "/assets/textures/salou_stucco.webp",
-    "wet_asphalt": "/assets/textures/wet_asphalt.webp",
-    "stone_plaza": "/assets/textures/stone_plaza.webp",
-    "blueprint_paper": "/assets/textures/blueprint_paper.webp"
   }
 }

@@ -3,34 +3,57 @@ import {
   CollectedLootItem,
   CrewId,
   CrewMember,
-  DeviationEvent,
   EscapeState,
   FloorId,
+  ForensicLoadout,
   HeistTarget,
+  InteractOutcome,
   LiveCameraState,
   LiveCrewState,
   LiveExecutionState,
   LiveGuardState,
+  NoisePulse,
+  PathWaypoint,
   RadioCommandType,
   ResolvedPlan,
+  StealthTelemetry,
   TargetNode,
   Vec2,
 } from './types';
-import { distance2D, selectPlanBBranch } from './planner';
+import {
+  distance2D,
+  getEffectiveForensicLoadout,
+  selectPlanBBranch,
+} from './planner';
 import {
   findRoomAt,
   headingBetween,
   isPointInVisionCone,
   sampleCameraHeading,
 } from './simulator';
+import {
+  computeRoomLightLevels,
+  findTargetPath,
+  sampleLightExposureAt,
+} from './pathfinding';
 
 // ============================================================================
-// Pure-TS Live Execution Engine (Runs against ACTUAL World, incl. hidden traps,
-// trait-driven deviations, guard vision/hearing, radio commands & Plan B)
+// Pure-TS Live Execution Engine (Round 2 Realism Overhaul)
+// - True wall-respecting multi-floor A* path following for crew & guards
+// - Persistent world state: unlockedDoorIds, openedContainerIds,
+//   brokenGlassNodes, powerCutRooms, roomLightLevels, positional noiseEvents
+// - Continuous light-exposure stealth, carry-weight slowdown & footstep noise
+// - Multi-state guard AI with interruptible radioing window (~3.5s / 6s jammer)
+// - Forensic gear effects: gloves, mask, dark_clothing, disguise_kit,
+//   signal_jammer, glass_cutter vs crowbar
+// - Minigame InteractOutcome support
 // ============================================================================
+
+const BASE_RADIO_DISPATCH_SEC = 3.5;
+const JAMMER_RADIO_BONUS_SEC = 2.5;
+const NOISE_PULSE_TTL_SEC = 4.5;
 
 function nextRng(state: number): { value: number; nextState: number } {
-  // Deterministic Mulberry32 step
   let t = (state + 0x6d2b79f5) | 0;
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -38,14 +61,14 @@ function nextRng(state: number): { value: number; nextState: number } {
   return { value, nextState: (state + 1) | 0 };
 }
 
-function moveTowards(
+function stepTowardsPoint(
   current: Vec2,
   target: Vec2,
   maxStep: number
 ): { pos: Vec2; arrived: boolean; headingDeg: number } {
   const dist = distance2D(current, target);
   const headingDeg = headingBetween(current, target);
-  if (dist <= maxStep || dist < 0.05) {
+  if (dist <= maxStep || dist < 0.08) {
     return { pos: { ...target }, arrived: true, headingDeg };
   }
   const ratio = maxStep / dist;
@@ -59,6 +82,125 @@ function moveTowards(
   };
 }
 
+/**
+ * Advances an actor along a multi-floor A* PathWaypoint list without phasing through walls.
+ */
+function advanceAlongPath(params: {
+  pos: Vec2;
+  floor: FloorId;
+  path: PathWaypoint[];
+  pathIndex: number;
+  speedMps: number;
+  dt: number;
+}): {
+  pos: Vec2;
+  floor: FloorId;
+  headingDeg: number;
+  pathIndex: number;
+  arrived: boolean;
+} {
+  const { path, speedMps, dt } = params;
+  if (path.length === 0) {
+    return {
+      pos: { ...params.pos },
+      floor: params.floor,
+      headingDeg: 0,
+      pathIndex: 0,
+      arrived: true,
+    };
+  }
+
+  let idx = Math.max(0, Math.min(path.length - 1, params.pathIndex));
+  let curPos = { ...params.pos };
+  let curFloor = params.floor;
+  let headingDeg = 0;
+  let remainingStep = Math.max(0.01, speedMps * dt);
+
+  while (remainingStep > 0.001 && idx < path.length) {
+    const wp = path[idx];
+    // Floor portal jump once reaching portal node
+    if (wp.floor !== curFloor) {
+      curFloor = wp.floor;
+      curPos = { ...wp.pos };
+      idx += 1;
+      remainingStep = Math.max(0, remainingStep - 1.2);
+      continue;
+    }
+
+    const dist = distance2D(curPos, wp.pos);
+    headingDeg = headingBetween(curPos, wp.pos);
+    if (dist <= remainingStep || dist < 0.12) {
+      curPos = { ...wp.pos };
+      remainingStep -= dist;
+      idx += 1;
+    } else {
+      const ratio = remainingStep / dist;
+      curPos = {
+        x: curPos.x + (wp.pos.x - curPos.x) * ratio,
+        z: curPos.z + (wp.pos.z - curPos.z) * ratio,
+      };
+      remainingStep = 0;
+    }
+  }
+
+  return {
+    pos: curPos,
+    floor: curFloor,
+    headingDeg,
+    pathIndex: idx,
+    arrived: idx >= path.length,
+  };
+}
+
+export function computeCarryWeightPenalty(itemCount: number, lootEur: number): number {
+  const byCount = itemCount * 0.09;
+  const byValue = lootEur > 200000 ? 0.06 : 0;
+  return Math.min(0.32, Math.round((byCount + byValue) * 100) / 100);
+}
+
+export function pushNoisePulse(
+  state: LiveExecutionState,
+  params: {
+    pos: Vec2;
+    floor: FloorId;
+    noiseDb: number;
+    label: string;
+    sourceCrewId?: CrewId;
+  }
+): void {
+  const db = Math.max(20, Math.min(110, Math.round(params.noiseDb)));
+  const radiusM = Math.max(2.0, Math.round(((db - 22) / 88) * 18 * 10) / 10);
+  const pulse: NoisePulse = {
+    id: `np_${Math.round(state.elapsedSec * 100)}_${state.noiseEvents.length}`,
+    pos: { ...params.pos },
+    floor: params.floor,
+    radiusM,
+    noiseDb: db,
+    emittedAtSec: state.elapsedSec,
+    sourceCrewId: params.sourceCrewId,
+    label: params.label,
+  };
+  state.noiseEvents.push(pulse);
+  if (state.noiseEvents.length > 18) {
+    state.noiseEvents = state.noiseEvents.slice(-18);
+  }
+  const normalized = Math.max(0, Math.min(100, Math.round(((db - 20) / 85) * 100)));
+  state.noiseLevel = Math.max(state.noiseLevel, normalized);
+}
+
+export function createInitialStealthTelemetry(): StealthTelemetry {
+  return {
+    lightExposure: 0.45,
+    noiseDb: 24,
+    highestSuspicion: 0,
+    suspicionSourceAngle: null,
+    suspicionGuardId: null,
+    guardState: 'patrol',
+    radioInterruptWindowSec: null,
+    carryWeightPenalty: 0,
+  };
+}
+
 export function createInitialLiveState(params: {
   target: HeistTarget;
   resolvedPlan: ResolvedPlan;
@@ -69,7 +211,7 @@ export function createInitialLiveState(params: {
   const crew = {} as Record<CrewId, LiveCrewState>;
   const crewIds = resolvedPlan.plan.assignedCrewIds;
   crewIds.forEach((cid, idx) => {
-    const offset = (idx - (crewIds.length - 1) / 2) * 1.1;
+    const offset = (idx - (crewIds.length - 1) / 2) * 0.9;
     crew[cid] = {
       crewId: cid,
       pos: { x: target.getawayPos.x + offset, z: target.getawayPos.z },
@@ -89,6 +231,7 @@ export function createInitialLiveState(params: {
       usingPlanB: false,
       deviationActive: null,
       extraLootTargetNodeId: null,
+      carryWeightPenalty: 0,
     };
   });
 
@@ -107,6 +250,10 @@ export function createInitialLiveState(params: {
       state: 'patrol',
       waypointIndex: 0,
       pauseRemainingSec: wp0.pauseSec,
+      radioProgress: 0,
+      radioDurationSec: BASE_RADIO_DISPATCH_SEC,
+      flashlightOn: g.role === 'nightwatch',
+      noticedAnomalyIds: [],
     };
   });
 
@@ -138,6 +285,14 @@ export function createInitialLiveState(params: {
     holdActive: false,
     completedNodeIds: [],
     triggeredHazardNodeIds: [],
+    unlockedDoorIds: [],
+    openedContainerIds: [],
+    brokenGlassNodes: [],
+    powerCutRooms: [],
+    roomLightLevels: computeRoomLightLevels(target, false),
+    noiseEvents: [],
+    stealthTelemetry: createInitialStealthTelemetry(),
+    activeMinigame: null,
     collectedLoot: [],
     totalLootEur: 0,
     crew,
@@ -165,18 +320,31 @@ export function createInitialEscapeState(
         : alarmLevel === 'suspicious'
           ? 35
           : 15;
+  const dispatched = alarmLevel === 'alarm' || alarmLevel === 'lockdown';
   return {
     active: true,
     elapsedSec: 0,
     speedKmh: 0,
     pursuitHeat: initialHeat,
-    policeSpotted: alarmLevel === 'alarm' || alarmLevel === 'lockdown',
+    policeSpotted: dispatched,
     clearSightTimerSec: 0,
     distanceToSafehouseM: target.safehouseEscapeDistanceM,
     carDamage: 0,
+    vehicleDamage: 0,
     vehicleRecognized: alarmLevel === 'lockdown',
     escaped: false,
     busted: false,
+    gear: 1,
+    rpm: 900,
+    throttle: 0,
+    headlightsOn: true,
+    isDrifting: false,
+    skidIntensity: 0,
+    policeLosCooldown: 0,
+    policeStatus: dispatched ? 'pursuit' : 'evaded',
+    policeDispatchEtaSec: dispatched ? 0 : undefined,
+    safehouseLocked: dispatched,
+    paintScrapeTrace: false,
   };
 }
 
@@ -185,7 +353,10 @@ function addEvidenceDraftOnce(
   draft: LiveExecutionState['pendingEvidence'][number]
 ) {
   const exists = state.pendingEvidence.some(
-    (e) => e.type === draft.type && e.relatedCrewId === draft.relatedCrewId
+    (e) =>
+      e.type === draft.type &&
+      e.relatedCrewId === draft.relatedCrewId &&
+      e.title === draft.title
   );
   if (!exists) {
     state.pendingEvidence.push(draft);
@@ -194,7 +365,8 @@ function addEvidenceDraftOnce(
 
 function escalateAlarm(
   state: LiveExecutionState,
-  targetLevel: LiveExecutionState['alarmLevel']
+  targetLevel: LiveExecutionState['alarmLevel'],
+  hasJammer = false
 ) {
   const order: LiveExecutionState['alarmLevel'][] = [
     'silent',
@@ -209,15 +381,11 @@ function escalateAlarm(
     (state.alarmLevel === 'alarm' || state.alarmLevel === 'lockdown') &&
     state.policeEtaSec === null
   ) {
-    state.policeEtaSec = 55;
+    state.policeEtaSec = hasJammer ? 80 : 55;
     state.compromised = true;
   }
 }
 
-/**
- * Applies a player radio command ('hold' | 'plan_b' | 'abort' | 'resume')
- * immediately to the live execution state.
- */
 export function applyRadioCommand(
   live: LiveExecutionState,
   command: RadioCommandType,
@@ -266,6 +434,8 @@ export function applyRadioCommand(
       if (c.state === 'extracted' || c.state === 'caught') continue;
       c.usingPlanB = true;
       c.extraLootTargetNodeId = null;
+      c.activePath = undefined;
+      c.activePathGoalKey = undefined;
       const branch = selectPlanBBranch(resolvedPlan.plan, c.crewId, 'manual_radio');
       c.state = 'fleeing';
       c.activeActionLabel = branch
@@ -290,6 +460,8 @@ export function applyRadioCommand(
       if (c.state === 'extracted' || c.state === 'caught') continue;
       c.state = 'fleeing';
       c.extraLootTargetNodeId = null;
+      c.activePath = undefined;
+      c.activePathGoalKey = undefined;
       c.activeActionLabel = 'ABBRUCH — Sprint zum Fluchtwagen';
     }
   }
@@ -297,23 +469,66 @@ export function applyRadioCommand(
   return next;
 }
 
-/**
- * Helper to execute node completion side-effects (power cut, alarm bypass, loot, etc.).
- */
 function completeNodeEffect(
   state: LiveExecutionState,
+  target: HeistTarget,
   node: TargetNode,
   actorCrewId: CrewId,
-  actionType: ActionBlock['type'] | 'interact'
+  actionType: ActionBlock['type'] | 'interact',
+  options?: {
+    usedTool?: string;
+    hasJammer?: boolean;
+    outcome?: InteractOutcome;
+  }
 ) {
   if (!state.completedNodeIds.includes(node.id)) {
     state.completedNodeIds.push(node.id);
   }
 
+  const usedCrowbar =
+    options?.usedTool === 'crowbar' || options?.outcome?.usedTool === 'crowbar';
+  const brokeGlass =
+    Boolean(options?.outcome?.brokenGlass) ||
+    (usedCrowbar && (node.kind === 'loot_case' || node.kind === 'entry_window'));
+
+  if (brokeGlass && !state.brokenGlassNodes.includes(node.id)) {
+    state.brokenGlassNodes.push(node.id);
+    pushNoisePulse(state, {
+      pos: node.pos,
+      floor: node.floor,
+      noiseDb: 94,
+      sourceCrewId: actorCrewId,
+      label: `Glasbruch (${node.label})`,
+    });
+  }
+
+  // Unlocking doors/windows/hatches updates persistent world state for 3D doors & guards!
+  if (
+    node.isAccessPoint ||
+    node.kind === 'lock' ||
+    actionType === 'enter' ||
+    actionType === 'pick_lock'
+  ) {
+    if (!state.unlockedDoorIds.includes(node.id)) {
+      state.unlockedDoorIds.push(node.id);
+    }
+  }
+
   if (node.kind === 'power_box' || actionType === 'cut_power') {
     state.powerDisabled = true;
+    state.powerCutRooms = target.rooms
+      .filter((r) => r.kind !== 'street' && r.kind !== 'roof')
+      .map((r) => r.id);
+    state.roomLightLevels = computeRoomLightLevels(
+      target,
+      true,
+      state.powerCutRooms
+    );
     for (const cam of state.cameras) {
       cam.active = false;
+    }
+    for (const g of state.guards) {
+      g.flashlightOn = true;
     }
   } else if (node.kind === 'alarm_panel' || actionType === 'bypass_alarm') {
     state.alarmBypassed = true;
@@ -324,13 +539,16 @@ function completeNodeEffect(
       cam.active = false;
     }
   } else if (node.kind === 'safe' || node.kind === 'loot_case') {
-    // Check if alarm-linked without bypass!
+    if (!state.openedContainerIds.includes(node.id)) {
+      state.openedContainerIds.push(node.id);
+    }
+
     if (
       node.alarmLinkedNodeId &&
       !state.alarmBypassed &&
       !state.completedNodeIds.includes(node.alarmLinkedNodeId)
     ) {
-      escalateAlarm(state, 'alarm');
+      escalateAlarm(state, 'alarm', options?.hasJammer);
       state.alarmProgress = Math.max(state.alarmProgress, 100);
       addEvidenceDraftOnce(state, {
         type: 'alarm_signature',
@@ -357,37 +575,79 @@ function completeNodeEffect(
       if (actor) {
         actor.carryingLootEur += item.valueEur;
         actor.carryingLootItems.push(item);
+        actor.carryWeightPenalty = computeCarryWeightPenalty(
+          actor.carryingLootItems.length,
+          actor.carryingLootEur
+        );
       }
     }
   }
 }
 
 /**
- * Allows the player (Mara) in 3D Live mode to directly interact with a nearby node.
+ * Resolves a live player (Mara) interaction with a node, accepting optional
+ * minigame InteractOutcome (clean success, noisy slip, tamper trip, crowbar glass break).
  */
 export function playerInteractWithNode(
   live: LiveExecutionState,
   target: HeistTarget,
-  nodeId: string
+  nodeId: string,
+  outcome?: InteractOutcome
 ): LiveExecutionState {
   const next: LiveExecutionState = structuredClone(live);
   const node = target.nodes.find((n) => n.id === nodeId);
   if (!node) return next;
 
   const mara = next.crew.mara;
-  if (mara) {
-    mara.activeActionLabel = `Abgeschlossen: ${node.label}`;
-    // Also mark any matching Mara block completed so sync barriers waiting on Mara unlock!
-    for (const key of Object.keys(next.crew)) {
-      const c = next.crew[key as CrewId];
-      if (c.crewId === 'mara' && c.activeBlockId && !c.completedBlockIds.includes(c.activeBlockId)) {
-        // Check if current block targets this node — handled in tick via completedNodeIds too
-      }
+  if (outcome?.trippedAlarm) {
+    escalateAlarm(next, 'alarm');
+    next.alarmProgress = 100;
+    pushNoisePulse(next, {
+      pos: node.pos,
+      floor: node.floor,
+      noiseDb: 96,
+      sourceCrewId: 'mara',
+      label: `Sabotage-Alarm (${node.label})`,
+    });
+    addEvidenceDraftOnce(next, {
+      type: 'alarm_signature',
+      title: `Sabotage-Kontakt ausgelöst (${node.label})`,
+      detail: 'Fehlgeschlagene Überbrückung der Securion-Schaltung meldete sofortigen Eingriff.',
+      targetId: target.id,
+      severity: 18,
+      relatedCrewId: 'mara',
+    });
+    if (mara) {
+      mara.activeActionLabel = `Fehlgeschlagen: ${node.label}`;
     }
+    return next;
   }
 
-  completeNodeEffect(next, node, 'mara', 'interact');
-  next.noiseLevel = Math.max(next.noiseLevel, Math.round(node.noiseLevel * 0.8));
+  if (mara) {
+    mara.activeActionLabel = `Abgeschlossen: ${node.label}`;
+  }
+
+  completeNodeEffect(next, target, node, 'mara', 'interact', { outcome });
+
+  const baseNoiseDb = 30 + node.noiseLevel * 0.65 + (outcome?.noiseDelta ?? 0);
+  pushNoisePulse(next, {
+    pos: node.pos,
+    floor: node.floor,
+    noiseDb: baseNoiseDb,
+    sourceCrewId: 'mara',
+    label: node.label,
+  });
+
+  if (outcome?.traceDelta && outcome.traceDelta >= 10) {
+    addEvidenceDraftOnce(next, {
+      type: 'fingerprints',
+      title: `Werkzeugspuren (${node.label})`,
+      detail: 'Abgerutschtes Werkzeug hinterließ deutliche Kratzer am Schließzylinder.',
+      targetId: target.id,
+      severity: 9,
+      relatedCrewId: 'mara',
+    });
+  }
 
   if (node.kind === 'getaway_zone') {
     if (mara) {
@@ -400,11 +660,82 @@ export function playerInteractWithNode(
   return next;
 }
 
+export function computeStealthTelemetry(
+  live: LiveExecutionState,
+  target: HeistTarget,
+  crewById: Record<CrewId, CrewMember>,
+  forensicByCrew?: Partial<Record<CrewId, ForensicLoadout>>
+): StealthTelemetry {
+  const mara = live.crew.mara;
+  const maraMember = crewById.mara;
+  const maraForensic =
+    maraMember ? getEffectiveForensicLoadout({ forensicLoadoutByCrew: forensicByCrew } as ResolvedPlan['plan'], maraMember) : undefined;
+
+  const lightExposure = mara
+    ? sampleLightExposureAt(target, mara.pos, mara.floor, live.roomLightLevels, {
+        darkClothing: Boolean(maraForensic?.darkClothing),
+        sneaking: mara.sneaking,
+      })
+    : 0.45;
+
+  const peakPulseDb = live.noiseEvents.reduce(
+    (max, p) => (live.elapsedSec - p.emittedAtSec <= 2.2 ? Math.max(max, p.noiseDb) : max),
+    24
+  );
+  const noiseDb = Math.max(peakPulseDb, Math.round(22 + live.noiseLevel * 0.78));
+
+  let highestSuspicion = 0;
+  let suspicionGuardId: string | null = null;
+  let suspicionSourceAngle: number | null = null;
+  let guardState: StealthTelemetry['guardState'] = 'patrol';
+  let radioInterruptWindowSec: number | null = null;
+
+  for (const g of live.guards) {
+    if (g.state === 'radioing' && g.radioDurationSec) {
+      const rem = Math.max(0, g.radioDurationSec * (1 - (g.radioProgress ?? 0)));
+      if (radioInterruptWindowSec === null || rem < radioInterruptWindowSec) {
+        radioInterruptWindowSec = Math.round(rem * 10) / 10;
+      }
+    }
+    if (g.suspicion > highestSuspicion) {
+      highestSuspicion = Math.round(g.suspicion);
+      suspicionGuardId = g.guardId;
+      guardState = g.state;
+      if (mara) {
+        suspicionSourceAngle = Math.round(headingBetween(mara.pos, g.pos));
+      }
+    }
+  }
+
+  for (const cam of live.cameras) {
+    if (cam.active && cam.suspicion > highestSuspicion) {
+      highestSuspicion = Math.round(cam.suspicion);
+      suspicionGuardId = cam.nodeId;
+      if (mara) {
+        suspicionSourceAngle = Math.round(headingBetween(mara.pos, cam.pos));
+      }
+    }
+  }
+
+  return {
+    lightExposure,
+    noiseDb,
+    highestSuspicion,
+    suspicionSourceAngle,
+    suspicionGuardId,
+    guardState,
+    radioInterruptWindowSec,
+    carryWeightPenalty: mara?.carryWeightPenalty ?? 0,
+  };
+}
+
 export interface LiveTickOptions {
   /** If true, Mara's position is driven externally by 3D WASD controller */
   playerSteeredExternally?: boolean;
   /** Workshop radio scrambler reduces deviation probability */
   hasRadioScrambler?: boolean;
+  /** If true, @npc-brain's 3D GuardSystem drives guards and syncs via syncLiveGuards */
+  skipGuardTick?: boolean;
 }
 
 /**
@@ -426,16 +757,32 @@ export function tickLiveExecution(params: {
   next.elapsedSec = Math.round((next.elapsedSec + dt) * 100) / 100;
   next.noiseLevel = Math.max(0, next.noiseLevel - dt * 18);
 
+  // Expire old positional noise pulses
+  next.noiseEvents = next.noiseEvents.filter(
+    (p) => next.elapsedSec - p.emittedAtSec <= NOISE_PULSE_TTL_SEC
+  );
+
+  // Refresh continuous room lighting
+  next.roomLightLevels = computeRoomLightLevels(
+    target,
+    next.powerDisabled,
+    next.powerCutRooms
+  );
+
   const nodesById: Record<string, TargetNode> = {};
   for (const n of target.nodes) nodesById[n.id] = n;
 
-  // Build global set of completed block IDs across all crew for SyncBarrier checks
+  // Check if any assigned crew member carries a signal_jammer!
+  const teamHasJammer = resolvedPlan.plan.assignedCrewIds.some((cid) =>
+    crewById[cid]?.equippedTools.includes('signal_jammer')
+  );
+
+  // Completed blocks across crew for SyncBarrier unlocking
   const allCompletedBlockIds = new Set<string>();
   for (const c of Object.values(next.crew)) {
     for (const bid of c.completedBlockIds) allCompletedBlockIds.add(bid);
   }
 
-  // Also sync: if Mara completed a node via manual 3D interaction, mark her matching block done
   const maraBlocks = resolvedPlan.orderedBlocksByCrew.mara ?? [];
   if (next.crew.mara) {
     for (const b of maraBlocks) {
@@ -450,7 +797,7 @@ export function tickLiveExecution(params: {
     }
   }
 
-  // Check if alarm triggered automatic Plan B for any crew member
+  // Auto Plan B trigger on full alarm
   if (
     (next.alarmLevel === 'alarm' || next.alarmLevel === 'lockdown') &&
     !next.planBActive &&
@@ -463,6 +810,8 @@ export function tickLiveExecution(params: {
       if (branch) {
         c.usingPlanB = true;
         c.state = 'fleeing';
+        c.activePath = undefined;
+        c.activePathGoalKey = undefined;
         c.activeActionLabel = `Plan B: ${branch.label}`;
         next.deviations.push({
           id: `dev_auto_pb_${c.crewId}_${next.deviations.length}`,
@@ -479,6 +828,48 @@ export function tickLiveExecution(params: {
     }
   }
 
+  // Helper: move crew member along cached wall-respecting A* path to (goalPos, goalFloor)
+  const moveCrewWithPath = (
+    c: LiveCrewState,
+    goalPos: Vec2,
+    goalFloor: FloorId,
+    goalKey: string,
+    speedMps: number,
+    goalNodeId?: string
+  ): boolean => {
+    const carryPenalty = c.carryWeightPenalty ?? 0;
+    const effectiveSpeed = Math.max(1.2, speedMps * (1 - carryPenalty));
+    if (!c.activePath || c.activePathGoalKey !== goalKey) {
+      const res = findTargetPath(target, c.pos, c.floor, goalPos, goalFloor, {
+        unlockedNodeIds: next.unlockedDoorIds,
+        respectLockedDoors: false,
+        goalNodeId,
+      });
+      c.activePath = res.waypoints;
+      c.activePathIndex = 1;
+      c.activePathGoalKey = goalKey;
+    }
+
+    const adv = advanceAlongPath({
+      pos: c.pos,
+      floor: c.floor,
+      path: c.activePath,
+      pathIndex: c.activePathIndex ?? 1,
+      speedMps: effectiveSpeed,
+      dt,
+    });
+    c.pos = adv.pos;
+    c.floor = adv.floor;
+    c.headingDeg = adv.headingDeg;
+    c.activePathIndex = adv.pathIndex;
+    c.speed = adv.arrived ? 0 : effectiveSpeed;
+    if (adv.arrived) {
+      c.activePath = undefined;
+      c.activePathGoalKey = undefined;
+    }
+    return adv.arrived;
+  };
+
   // 1) Update each Crew Member
   for (const cid of resolvedPlan.plan.assignedCrewIds) {
     const c = next.crew[cid];
@@ -486,7 +877,11 @@ export function tickLiveExecution(params: {
     if (!c || !member) continue;
     if (c.state === 'extracted' || c.state === 'caught') continue;
 
-    // External WASD steering for Mara: keep Mara's pos as provided, just check getaway proximity
+    c.carryWeightPenalty = computeCarryWeightPenalty(
+      c.carryingLootItems.length,
+      c.carryingLootEur
+    );
+
     if (cid === 'mara' && options.playerSteeredExternally) {
       if (
         next.collectedLoot.length > 0 &&
@@ -504,7 +899,6 @@ export function tickLiveExecution(params: {
       continue;
     }
 
-    // Stress rises under alarm or high suspicion
     if (next.alarmLevel === 'alarm' || next.alarmLevel === 'lockdown') {
       c.stress = Math.min(100, c.stress + dt * (110 - member.traits.nerves) * 0.18);
     } else if (next.alarmLevel === 'suspicious') {
@@ -513,15 +907,17 @@ export function tickLiveExecution(params: {
       c.stress = Math.max(0, c.stress - dt * 5);
     }
 
-    // Fleeing / Plan B / Abort movement back to getaway car (optionally via fallback exit)
+    // Fleeing / Plan B / Abort along real A* escape path
     if (next.abortActive || c.usingPlanB || c.state === 'fleeing') {
       const sprintSpeed = 3.8 + member.skills.climbing * 0.1;
-      const move = moveTowards(c.pos, target.getawayPos, sprintSpeed * dt);
-      c.pos = move.pos;
-      c.headingDeg = move.headingDeg;
-      c.floor = 0;
-      c.speed = sprintSpeed;
-      if (move.arrived) {
+      const arrived = moveCrewWithPath(
+        c,
+        target.getawayPos,
+        0,
+        `flee_${cid}`,
+        sprintSpeed
+      );
+      if (arrived) {
         c.state = 'extracted';
         c.speed = 0;
         c.activeActionLabel = 'Im Fluchtwagen';
@@ -529,24 +925,38 @@ export function tickLiveExecution(params: {
       continue;
     }
 
-    // Greed deviation: detouring to grab an unlooted extra loot_case
+    // Greed extra loot detour via A*
     if (c.extraLootTargetNodeId) {
       const extraNode = nodesById[c.extraLootTargetNodeId];
       if (!extraNode || next.completedNodeIds.includes(extraNode.id)) {
         c.extraLootTargetNodeId = null;
         c.deviationActive = null;
       } else {
-        const step = moveTowards(c.pos, extraNode.pos, 2.9 * dt);
-        c.pos = step.pos;
-        c.headingDeg = step.headingDeg;
-        c.floor = extraNode.floor;
+        const arrived = moveCrewWithPath(
+          c,
+          extraNode.pos,
+          extraNode.floor,
+          `greed_${extraNode.id}`,
+          2.9,
+          extraNode.id
+        );
         c.state = 'deviating';
         c.activeActionLabel = `GIER: Greift nach ${extraNode.label}!`;
-        if (step.arrived) {
+        if (arrived) {
           c.blockProgress += dt / Math.max(3, extraNode.baseDurationSec * 0.7);
-          next.noiseLevel = Math.max(next.noiseLevel, extraNode.noiseLevel + 10);
+          const forensic = getEffectiveForensicLoadout(resolvedPlan.plan, member);
           if (c.blockProgress >= 1) {
-            completeNodeEffect(next, extraNode, cid, 'grab_loot');
+            completeNodeEffect(next, target, extraNode, cid, 'grab_loot', {
+              usedTool: forensic.entryTool,
+              hasJammer: teamHasJammer,
+            });
+            pushNoisePulse(next, {
+              pos: extraNode.pos,
+              floor: extraNode.floor,
+              noiseDb: 45 + extraNode.noiseLevel * 0.5,
+              sourceCrewId: cid,
+              label: `Gier-Beute (${extraNode.label})`,
+            });
             c.blockProgress = 0;
             c.extraLootTargetNodeId = null;
             c.deviationActive = null;
@@ -556,11 +966,9 @@ export function tickLiveExecution(params: {
       }
     }
 
-    // Execute planned track blocks in order
     const track = resolvedPlan.orderedBlocksByCrew[cid] ?? [];
     if (c.activeBlockIndex >= track.length) {
-      c.state =
-        distance2D(c.pos, target.getawayPos) < 3.0 ? 'extracted' : 'idle';
+      c.state = distance2D(c.pos, target.getawayPos) < 3.0 ? 'extracted' : 'idle';
       c.activeBlockId = null;
       c.speed = 0;
       continue;
@@ -569,7 +977,7 @@ export function tickLiveExecution(params: {
     const block = track[c.activeBlockIndex];
     c.activeBlockId = block.id;
 
-    // Check SyncBarrier prerequisites for this block
+    // Check SyncBarrier dependencies
     const requiredSyncs = resolvedPlan.plan.syncBarriers.filter(
       (sb) => sb.toBlockId === block.id
     );
@@ -583,7 +991,6 @@ export function tickLiveExecution(params: {
       continue;
     }
 
-    // Also respect explicit start delay on the first block
     if (c.activeBlockIndex === 0 && next.elapsedSec < block.startSec) {
       c.state = 'idle';
       c.speed = 0;
@@ -591,27 +998,39 @@ export function tickLiveExecution(params: {
       continue;
     }
 
-    // Move to block's targetPos first
-    const walkSpeed = c.sneaking ? 1.8 : 2.7 + (member.skills.climbing - 5) * 0.08;
-    const move = moveTowards(c.pos, block.targetPos, walkSpeed * dt);
-    if (!move.arrived) {
-      c.pos = move.pos;
-      c.headingDeg = move.headingDeg;
-      c.floor = block.floor;
-      c.speed = walkSpeed;
+    // Move along A* corridor path to block destination
+    const walkSpeed = c.sneaking ? 1.8 : 2.75 + (member.skills.climbing - 5) * 0.08;
+    const arrived = moveCrewWithPath(
+      c,
+      block.targetPos,
+      block.floor,
+      `blk_${block.id}`,
+      walkSpeed,
+      block.targetNodeId
+    );
+    if (!arrived) {
       c.state = 'moving';
       c.activeActionLabel = `Unterwegs: ${block.label}`;
+      // Carrying heavy loot increases footstep noise
+      if (c.carryingLootItems.length >= 2 && !c.sneaking) {
+        pushNoisePulse(next, {
+          pos: c.pos,
+          floor: c.floor,
+          noiseDb: 38 + c.carryingLootItems.length * 8,
+          sourceCrewId: cid,
+          label: 'Schwere Schritte (Beute)',
+        });
+      }
       continue;
     }
 
-    // Arrived at targetPos — perform block work
+    // Arrived — execute work block
     c.pos = { ...block.targetPos };
     c.floor = block.floor;
     c.speed = 0;
     c.state = 'working';
     c.activeActionLabel = block.label;
 
-    // High-nerves improvisation bonus under pressure
     let workRateMultiplier = 1.0;
     if (
       member.traits.nerves >= 80 &&
@@ -633,7 +1052,6 @@ export function tickLiveExecution(params: {
       });
     }
 
-    // Low-nerves panic noise / abort under high stress
     const scramblerFactor = options.hasRadioScrambler ? 0.65 : 1.0;
     if (
       member.traits.nerves <= 55 &&
@@ -647,6 +1065,8 @@ export function tickLiveExecution(params: {
         if (c.stress >= 72) {
           c.deviationActive = 'panic_abort';
           c.state = 'fleeing';
+          c.activePath = undefined;
+          c.activePathGoalKey = undefined;
           c.activeActionLabel = 'PANIK: Bricht ab & flieht!';
           next.deviations.push({
             id: `dev_pan_ab_${cid}_${next.deviations.length}`,
@@ -662,7 +1082,13 @@ export function tickLiveExecution(params: {
           continue;
         } else {
           c.deviationActive = 'panic_noise';
-          next.noiseLevel = Math.min(100, Math.max(next.noiseLevel, 82));
+          pushNoisePulse(next, {
+            pos: c.pos,
+            floor: c.floor,
+            noiseDb: 88,
+            sourceCrewId: cid,
+            label: `Lärm-Patzer (${member.name})`,
+          });
           next.deviations.push({
             id: `dev_pan_n_${cid}_${next.deviations.length}`,
             timeSec: next.elapsedSec,
@@ -678,10 +1104,18 @@ export function tickLiveExecution(params: {
       }
     }
 
-    // Work duration = ~65% of total block duration (since travel already happened)
-    const workDur = Math.max(1.5, block.durationSec * 0.65);
+    const workDur = Math.max(1.5, block.durationSec * 0.62);
     c.blockProgress = Math.min(1, c.blockProgress + (dt * workRateMultiplier) / workDur);
-    next.noiseLevel = Math.max(next.noiseLevel, block.estimatedNoise * 0.85);
+
+    if (block.estimatedNoise >= 35) {
+      pushNoisePulse(next, {
+        pos: c.pos,
+        floor: c.floor,
+        noiseDb: 26 + block.estimatedNoise * 0.72,
+        sourceCrewId: cid,
+        label: block.label,
+      });
+    }
 
     if (c.blockProgress >= 1) {
       c.blockProgress = 0;
@@ -690,7 +1124,11 @@ export function tickLiveExecution(params: {
       c.activeBlockIndex += 1;
 
       if (block.targetNodeId && nodesById[block.targetNodeId]) {
-        completeNodeEffect(next, nodesById[block.targetNodeId], cid, block.type);
+        const forensic = getEffectiveForensicLoadout(resolvedPlan.plan, member);
+        completeNodeEffect(next, target, nodesById[block.targetNodeId], cid, block.type, {
+          usedTool: block.toolId ?? forensic.entryTool,
+          hasJammer: teamHasJammer,
+        });
       }
 
       if (block.type === 'extract') {
@@ -699,7 +1137,6 @@ export function tickLiveExecution(params: {
         continue;
       }
 
-      // Greed deviation check after looting!
       if (
         (block.type === 'grab_loot' || block.type === 'crack_safe') &&
         member.traits.greed >= 70 &&
@@ -733,7 +1170,7 @@ export function tickLiveExecution(params: {
     }
   }
 
-  // 2) Check Hidden Traps against ACTUAL world (unpowered traps are harmless)
+  // 2) Hidden Traps against ACTUAL world
   for (const node of target.nodes) {
     if (!node.isHiddenHazard) continue;
     if (next.triggeredHazardNodeIds.includes(node.id)) continue;
@@ -744,9 +1181,15 @@ export function tickLiveExecution(params: {
       if (c.state === 'extracted' || c.state === 'caught') continue;
       if (c.floor === node.floor && distance2D(c.pos, node.pos) < 2.2) {
         next.triggeredHazardNodeIds.push(node.id);
-        escalateAlarm(next, 'alarm');
+        escalateAlarm(next, 'alarm', teamHasJammer);
         next.alarmProgress = 100;
-        next.noiseLevel = Math.max(next.noiseLevel, 75);
+        pushNoisePulse(next, {
+          pos: node.pos,
+          floor: node.floor,
+          noiseDb: 92,
+          sourceCrewId: c.crewId,
+          label: `Sensor ausgelöst (${node.label})`,
+        });
         next.deviations.push({
           id: `dev_trap_${node.id}`,
           timeSec: next.elapsedSec,
@@ -770,7 +1213,7 @@ export function tickLiveExecution(params: {
     }
   }
 
-  // 3) Update Cameras & Camera Sightlines
+  // 3) Cameras & CCTV Sightlines (Wall-Occluded)
   for (const cam of next.cameras) {
     const node = nodesById[cam.nodeId];
     if (!node) continue;
@@ -801,7 +1244,7 @@ export function tickLiveExecution(params: {
         cam.suspicion = Math.min(100, cam.suspicion + dt * 62);
         next.alarmProgress = Math.min(100, next.alarmProgress + dt * 35);
         if (cam.suspicion >= 45) {
-          escalateAlarm(next, 'suspicious');
+          escalateAlarm(next, 'suspicious', teamHasJammer);
           addEvidenceDraftOnce(next, {
             type: 'camera_footage',
             title: `Überwachungskamera (${node.label})`,
@@ -812,7 +1255,7 @@ export function tickLiveExecution(params: {
           });
         }
         if (cam.suspicion >= 95) {
-          escalateAlarm(next, 'alarm');
+          escalateAlarm(next, 'alarm', teamHasJammer);
         }
       }
     }
@@ -821,130 +1264,252 @@ export function tickLiveExecution(params: {
     }
   }
 
-  // 4) Update Guards (Patrol, Hearing Noise, Vision Cones)
-  for (const gState of next.guards) {
-    const gDef = target.guards.find((g) => g.id === gState.guardId);
-    if (!gDef) continue;
+  // 4) Multi-State Guards (skipped if @npc-brain's GuardSystem owns live 3D guard tick)
+  if (!options.skipGuardTick) {
+    const radioDur = BASE_RADIO_DISPATCH_SEC + (teamHasJammer ? JAMMER_RADIO_BONUS_SEC : 0);
 
-    // Movement
-    if (gState.state === 'investigating' && gState.investigatePos) {
-      const m = moveTowards(gState.pos, gState.investigatePos, gDef.speedMps * 1.1 * dt);
-      gState.pos = m.pos;
-      gState.headingDeg = m.headingDeg;
-      if (m.arrived) {
-        gState.pauseRemainingSec -= dt;
-        if (gState.pauseRemainingSec <= 0) {
-          gState.state = 'patrol';
-          gState.investigatePos = undefined;
+    for (const gState of next.guards) {
+      const gDef = target.guards.find((g) => g.id === gState.guardId);
+      if (!gDef) continue;
+      gState.radioDurationSec = radioDur;
+      if (!gState.noticedAnomalyIds) gState.noticedAnomalyIds = [];
+
+      // Radioing state: interruptible ~3.5s (or 6s with jammer) dispatch window!
+      if (gState.state === 'radioing') {
+        gState.radioProgress = Math.min(
+          1,
+          (gState.radioProgress ?? 0) + dt / radioDur
+        );
+        gState.calloutText = 'Funkt Leitstelle an!';
+        if (gState.radioProgress >= 1) {
+          gState.state = 'pursuit';
+          gState.calloutText = 'Alarm ausgelöst — Verstärkung unterwegs!';
+          escalateAlarm(next, 'alarm', teamHasJammer);
         }
-      }
-    } else if (gDef.waypoints.length > 0) {
-      const curWp = gDef.waypoints[gState.waypointIndex % gDef.waypoints.length];
-      const nextIdx = (gState.waypointIndex + 1) % gDef.waypoints.length;
-      const nextWp = gDef.waypoints[nextIdx];
-
-      if (gState.pauseRemainingSec > 0) {
-        gState.pauseRemainingSec = Math.max(0, gState.pauseRemainingSec - dt);
-        gState.headingDeg =
-          curWp.lookAngleDeg ?? headingBetween(gState.pos, nextWp.pos);
-      } else {
-        const m = moveTowards(gState.pos, nextWp.pos, gDef.speedMps * dt);
-        gState.pos = m.pos;
-        gState.floor = nextWp.floor;
-        gState.headingDeg = m.headingDeg;
-        if (m.arrived) {
-          gState.waypointIndex = nextIdx;
-          gState.pauseRemainingSec = nextWp.pauseSec;
-        }
-      }
-    }
-
-    // Vision & Hearing detection
-    let seesCrew = false;
-
-    for (const c of Object.values(next.crew)) {
-      if (c.state === 'extracted' || c.state === 'caught') continue;
-      if (distance2D(c.pos, target.getawayPos) < 2.5 && gDef.visibleFromStreet) {
         continue;
       }
 
-      // Walking casually or acting as lookout in a public street without loot/alarm looks normal
-      const crewRoom = findRoomAt(target, c.pos, c.floor);
-      const activeBlock = c.activeBlockId
-        ? resolvedPlan.blocksById[c.activeBlockId]
-        : undefined;
-      const doingOvertCrime =
-        c.state === 'working' &&
-        activeBlock?.type !== 'lookout' &&
-        activeBlock?.type !== 'wait' &&
-        activeBlock?.type !== 'stage_car';
-      const isPublicPedestrian =
-        crewRoom?.securityZone === 'public' &&
-        !doingOvertCrime &&
-        c.carryingLootEur === 0 &&
-        next.alarmLevel !== 'alarm' &&
-        next.alarmLevel !== 'lockdown';
-      if (isPublicPedestrian) continue;
-
-      // Cutting power plunges interior rooms into darkness, slashing visibility into them
-      const inDarkenedInterior =
-        next.powerDisabled && crewRoom?.securityZone !== 'public';
-      const darknessFactor = inDarkenedInterior ? 0.48 : 1.0;
-
-      const dist = distance2D(gState.pos, c.pos);
-      const effectiveRange =
-        (c.sneaking ? gDef.visionRange * 0.72 : gDef.visionRange) * darknessFactor;
+      // Movement along A* path for investigating/searching/pursuit, or patrol loop
       if (
-        isPointInVisionCone({
-          observerPos: gState.pos,
-          observerFloor: gState.floor,
-          headingDeg: gState.headingDeg,
-          range: effectiveRange,
-          coneDeg: gDef.visionConeDeg,
-          targetPos: c.pos,
-          targetFloor: c.floor,
-          walls: target.walls,
-        })
+        (gState.state === 'investigating' ||
+          gState.state === 'pursuit' ||
+          gState.state === 'searching') &&
+        gState.investigatePos
       ) {
-        seesCrew = true;
-        const rate = 100 / Math.max(0.6, gDef.alertThresholdSec);
-        gState.suspicion = Math.min(100, gState.suspicion + dt * rate);
-        next.alarmProgress = Math.min(100, next.alarmProgress + dt * rate * 0.7);
-        if (gState.suspicion >= 40) {
-          gState.state = 'investigating';
-          gState.investigatePos = { ...c.pos };
-          gState.pauseRemainingSec = 3;
-          escalateAlarm(next, 'suspicious');
+        const moveSpd =
+          gState.state === 'pursuit' ? gDef.speedMps * 1.45 : gDef.speedMps * 1.1;
+        if (!gState.pathWaypoints || gState.pathWaypoints.length === 0) {
+          gState.pathWaypoints = findTargetPath(
+            target,
+            gState.pos,
+            gState.floor,
+            gState.investigatePos,
+            gState.floor,
+            { respectLockedDoors: false }
+          ).waypoints;
+          gState.pathIndex = 1;
         }
-        if (gState.suspicion >= 95) {
-          gState.state = 'alerted';
-          escalateAlarm(next, 'alarm');
-          addEvidenceDraftOnce(next, {
-            type: 'witness',
-            title: `Augenzeuge: ${gDef.name}`,
-            detail: `Wachmann identifizierte Gestalt von ${crewById[c.crewId]?.name ?? c.crewId}.`,
-            targetId: target.id,
-            severity: 15,
-            relatedCrewId: c.crewId,
-          });
+        const adv = advanceAlongPath({
+          pos: gState.pos,
+          floor: gState.floor,
+          path: gState.pathWaypoints,
+          pathIndex: gState.pathIndex ?? 1,
+          speedMps: moveSpd,
+          dt,
+        });
+        gState.pos = adv.pos;
+        gState.headingDeg = adv.headingDeg;
+        gState.pathIndex = adv.pathIndex;
+        if (adv.arrived) {
+          gState.pathWaypoints = undefined;
+          gState.pauseRemainingSec -= dt;
+          // Sweep head/flashlight left & right while searching
+          gState.headingDeg =
+            (gState.headingDeg + Math.sin(next.elapsedSec * 2.4) * 50 * dt + 360) %
+            360;
+          if (gState.pauseRemainingSec <= 0) {
+            gState.state = 'patrol';
+            gState.investigatePos = undefined;
+            gState.calloutText = undefined;
+          }
         }
-      } else if (
-        next.noiseLevel >= 55 &&
-        c.floor === gState.floor &&
-        dist <= gDef.hearingRange * (next.noiseLevel / 70)
-      ) {
-        gState.suspicion = Math.min(100, gState.suspicion + dt * 28);
-        if (gState.suspicion >= 35 && gState.state === 'patrol') {
-          gState.state = 'investigating';
-          gState.investigatePos = { ...c.pos };
-          gState.pauseRemainingSec = 3.5;
-          escalateAlarm(next, 'suspicious');
+      } else if (gDef.waypoints.length > 0) {
+        const curWp = gDef.waypoints[gState.waypointIndex % gDef.waypoints.length];
+        const nextIdx = (gState.waypointIndex + 1) % gDef.waypoints.length;
+        const nextWp = gDef.waypoints[nextIdx];
+
+        if (gState.pauseRemainingSec > 0) {
+          gState.pauseRemainingSec = Math.max(0, gState.pauseRemainingSec - dt);
+          gState.headingDeg =
+            curWp.lookAngleDeg ?? headingBetween(gState.pos, nextWp.pos);
+        } else {
+          const m = stepTowardsPoint(gState.pos, nextWp.pos, gDef.speedMps * dt);
+          gState.pos = m.pos;
+          gState.floor = nextWp.floor;
+          gState.headingDeg = m.headingDeg;
+          if (m.arrived) {
+            gState.waypointIndex = nextIdx;
+            gState.pauseRemainingSec = nextWp.pauseSec;
+          }
         }
       }
-    }
 
-    if (!seesCrew) {
-      gState.suspicion = Math.max(0, gState.suspicion - dt * 14);
+      // Environmental anomaly awareness: broken glass / opened containers / cut power
+      for (const anomalyId of [...next.brokenGlassNodes, ...next.openedContainerIds]) {
+        if (gState.noticedAnomalyIds.includes(anomalyId)) continue;
+        const aNode = nodesById[anomalyId];
+        if (!aNode || aNode.floor !== gState.floor) continue;
+        if (
+          isPointInVisionCone({
+            observerPos: gState.pos,
+            observerFloor: gState.floor,
+            headingDeg: gState.headingDeg,
+            range: gDef.visionRange * 0.75,
+            coneDeg: gDef.visionConeDeg,
+            targetPos: aNode.pos,
+            targetFloor: aNode.floor,
+            walls: target.walls,
+          })
+        ) {
+          gState.noticedAnomalyIds.push(anomalyId);
+          gState.state = 'investigating';
+          gState.investigatePos = { ...aNode.pos };
+          gState.investigateReason = next.brokenGlassNodes.includes(anomalyId)
+            ? 'glass'
+            : 'loot';
+          gState.pathWaypoints = undefined;
+          gState.pauseRemainingSec = 4;
+          gState.suspicion = Math.max(gState.suspicion, 55);
+          gState.calloutText = `Anomalie entdeckt: ${aNode.label}!`;
+          escalateAlarm(next, 'suspicious', teamHasJammer);
+        }
+      }
+
+      // Vision detection with continuous light exposure + forensic gear
+      let seesCrew = false;
+      for (const c of Object.values(next.crew)) {
+        if (c.state === 'extracted' || c.state === 'caught') continue;
+        if (distance2D(c.pos, target.getawayPos) < 2.5 && gDef.visibleFromStreet) {
+          continue;
+        }
+
+        const member = crewById[c.crewId];
+        const forensic = member
+          ? getEffectiveForensicLoadout(resolvedPlan.plan, member)
+          : undefined;
+        const crewRoom = findRoomAt(target, c.pos, c.floor);
+        const activeBlock = c.activeBlockId
+          ? resolvedPlan.blocksById[c.activeBlockId]
+          : undefined;
+        const doingOvertCrime =
+          c.state === 'working' &&
+          activeBlock?.type !== 'lookout' &&
+          activeBlock?.type !== 'wait' &&
+          activeBlock?.type !== 'stage_car';
+        const wearingMaskInPublic =
+          crewRoom?.securityZone === 'public' && Boolean(forensic?.mask);
+        const isPublicPedestrian =
+          crewRoom?.securityZone === 'public' &&
+          !doingOvertCrime &&
+          !wearingMaskInPublic &&
+          c.carryingLootEur === 0 &&
+          next.alarmLevel !== 'alarm' &&
+          next.alarmLevel !== 'lockdown';
+        if (isPublicPedestrian) continue;
+
+        const lightExp = sampleLightExposureAt(
+          target,
+          c.pos,
+          c.floor,
+          next.roomLightLevels,
+          {
+            darkClothing: Boolean(forensic?.darkClothing),
+            sneaking: c.sneaking,
+          }
+        );
+        const effectiveRange = gDef.visionRange * (0.42 + lightExp * 0.68);
+        const hasDisguise = Boolean(member?.equippedTools.includes('disguise_kit'));
+        const disguiseSlowdown =
+          hasDisguise && !doingOvertCrime && c.carryingLootEur === 0 ? 0.6 : 1.0;
+
+        if (
+          isPointInVisionCone({
+            observerPos: gState.pos,
+            observerFloor: gState.floor,
+            headingDeg: gState.headingDeg,
+            range: effectiveRange,
+            coneDeg: gDef.visionConeDeg,
+            targetPos: c.pos,
+            targetFloor: c.floor,
+            walls: target.walls,
+          })
+        ) {
+          seesCrew = true;
+          const baseRate = 100 / Math.max(0.6, gDef.alertThresholdSec);
+          const maskPublicBoost = wearingMaskInPublic ? 1.35 : 1.0;
+          const rate = baseRate * disguiseSlowdown * maskPublicBoost;
+          gState.suspicion = Math.min(100, gState.suspicion + dt * rate);
+          gState.lastKnownTargetPos = { ...c.pos };
+          next.alarmProgress = Math.min(100, next.alarmProgress + dt * rate * 0.55);
+
+          if (gState.suspicion >= 25 && gState.state === 'patrol') {
+            gState.state = 'suspicious';
+            gState.calloutText = 'Wer ist da?';
+          }
+          if (gState.suspicion >= 48 && gState.state !== 'pursuit') {
+            gState.state = 'investigating';
+            gState.investigatePos = { ...c.pos };
+            gState.investigateReason = 'sight';
+            gState.pathWaypoints = undefined;
+            gState.pauseRemainingSec = 3.5;
+            escalateAlarm(next, 'suspicious', teamHasJammer);
+          }
+          if (gState.suspicion >= 95) {
+            gState.state = 'radioing';
+            gState.radioProgress = 0;
+            gState.calloutText = 'Zentrale, Eindringling gesichtet!';
+            addEvidenceDraftOnce(next, {
+              type: 'witness',
+              title: `Augenzeuge: ${gDef.name}`,
+              detail: `Wachmann identifizierte Gestalt von ${member?.name ?? c.crewId}.`,
+              targetId: target.id,
+              severity: 15,
+              relatedCrewId: c.crewId,
+            });
+          }
+        }
+      }
+
+      // Positional Noise Hearing: guard investigates the ACTUAL noise source coordinates!
+      if (!seesCrew) {
+        let heardNoise = false;
+        for (const pulse of next.noiseEvents) {
+          if (pulse.floor !== gState.floor) continue;
+          const d = distance2D(gState.pos, pulse.pos);
+          if (d <= Math.min(gDef.hearingRange * 1.45, pulse.radiusM)) {
+            heardNoise = true;
+            const loudnessGain = pulse.noiseDb >= 80 ? 55 : 32;
+            gState.suspicion = Math.min(85, gState.suspicion + dt * loudnessGain);
+            if (gState.suspicion >= 30 && (gState.state === 'patrol' || gState.state === 'suspicious')) {
+              gState.state = 'investigating';
+              gState.investigatePos = { ...pulse.pos };
+              gState.investigateReason = 'noise';
+              gState.pathWaypoints = undefined;
+              gState.pauseRemainingSec = 4;
+              gState.calloutText = `Geräusch gehört: ${pulse.label}`;
+              escalateAlarm(next, 'suspicious', teamHasJammer);
+            }
+            break;
+          }
+        }
+        if (!heardNoise) {
+          gState.suspicion = Math.max(0, gState.suspicion - dt * 14);
+          if (gState.suspicion < 15 && gState.state === 'suspicious') {
+            gState.state = 'patrol';
+            gState.calloutText = undefined;
+          }
+        }
+      }
     }
   }
 
@@ -952,11 +1517,19 @@ export function tickLiveExecution(params: {
   if (next.policeEtaSec !== null) {
     next.policeEtaSec = Math.max(0, Math.round((next.policeEtaSec - dt) * 10) / 10);
     if (next.policeEtaSec <= 0) {
-      escalateAlarm(next, 'lockdown');
+      escalateAlarm(next, 'lockdown', teamHasJammer);
     }
   }
 
-  // 6) Check if all crew have extracted -> ready for getaway driving!
+  // 6) Update live stealth telemetry
+  next.stealthTelemetry = computeStealthTelemetry(
+    next,
+    target,
+    crewById,
+    resolvedPlan.plan.forensicLoadoutByCrew
+  );
+
+  // 7) Check if all crew extracted
   const activeCrew = Object.values(next.crew);
   const allDone =
     activeCrew.length > 0 &&

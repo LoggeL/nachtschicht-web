@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "project": "Nachtschicht",
   "coordinateSystem": {
     "up": "+Y",
@@ -9,34 +9,38 @@
     "groundedAtY": 0.0
   },
   "summary": {
-    "modelCount": 13,
-    "totalSizeBytes": 2158808,
-    "totalSizeMB": 2.059,
-    "totalTriangles": 32626
+    "modelCount": 18,
+    "totalSizeBytes": 25109704,
+    "totalSizeMB": 23.946,
+    "totalTriangles": 255235
   },
   "models": {
-    "getaway_car": {
-      "file": "getaway_car.glb",
-      "url": "/assets/models/getaway_car.glb",
-      "category": "vehicle",
-      "description": "Stylized European midnight sport-coupe getaway vehicle with tinted windows, interior silhouette, emissive headlights/taillights, and 4 pivoted wheels.",
-      "sizeBytes": 340688,
-      "triangles": 5440,
+    "salou_facade": {
+      "key": "salou_facade",
+      "file": "salou_facade.glb",
+      "url": "/assets/models/salou_facade.glb",
+      "category": "environment",
+      "description": "Photorealistic modular 6.0m Catalan Mediterranean townhouse/hotel facade with recessed shopfront glazing & interior, louvered wooden shutters, ornate wrought-iron balcony, striped canvas awning, and backlit neon fascia.",
+      "sizeBytes": 2214604,
+      "triangles": 19702,
+      "textures": 21,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 2.16,
-        "height": 1.365,
-        "depth": 4.58
+        "width": 6.18,
+        "height": 8.6298,
+        "depth": 2.699
       },
       "bounds": {
         "min": [
-          -1.08,
+          -3.09,
           0.0,
-          -2.27
+          -1.659
         ],
         "max": [
-          1.08,
-          1.365,
-          2.31
+          3.09,
+          8.6298,
+          1.04
         ]
       },
       "originOffset": [
@@ -47,239 +51,162 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Body",
-        "Glass",
-        "Interior",
-        "Headlights",
-        "Taillights",
-        "Wheel_FL",
-        "Wheel_FR",
-        "Wheel_RL",
-        "Wheel_RR"
+        "Awning",
+        "Balcony",
+        "Facade_Wall",
+        "Neon_Sign",
+        "Windows_Warm"
       ],
       "nodes": [
         {
-          "name": "Body",
+          "name": "Awning",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0,
+            0.03,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0,
-            -0.0
+            0.03,
+            0.0
           ],
-          "triangles": 1712,
+          "triangles": 324,
           "materials": [
-            "Coupe_MidnightPaint",
-            "Coupe_DarkTrim",
-            "Coupe_Grille",
-            "Coupe_BrushedSteel",
-            "Coupe_Plate"
+            "Salou_AwningCanvas",
+            "Salou_WroughtIron"
           ]
         },
         {
-          "name": "Glass",
+          "name": "Balcony",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0,
+            0.03,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0,
-            -0.0
+            0.03,
+            0.0
           ],
-          "triangles": 12,
+          "triangles": 5152,
           "materials": [
-            "Coupe_TintedGlass"
+            "Salou_LimestoneAshlar",
+            "Salou_DarkPlinth",
+            "Salou_WroughtIron",
+            "Salou_BrushedBrass"
           ]
         },
         {
-          "name": "Interior",
+          "name": "Facade_Wall",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0,
+            0.03,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0,
-            -0.0
+            0.03,
+            0.0
           ],
-          "triangles": 448,
+          "triangles": 13356,
           "materials": [
-            "Coupe_DashAccent",
-            "Coupe_Interior"
+            "Salou_LimestoneAshlar",
+            "Salou_DarkPlinth",
+            "Salou_InteriorPlaster",
+            "Salou_InteriorGlow",
+            "Salou_WalnutDoor",
+            "Salou_BrushedBrass",
+            "Salou_CatalanStucco",
+            "Salou_TealLouverWood",
+            "Salou_WroughtIron",
+            "Salou_TerracottaTile"
           ]
         },
         {
-          "name": "Headlights",
+          "name": "Neon_Sign",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0,
+            0.03,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0,
-            -0.0
+            0.03,
+            0.0
           ],
-          "triangles": 112,
+          "triangles": 316,
           "materials": [
-            "Coupe_Headlight"
+            "Salou_WroughtIron",
+            "Salou_BrushedBrass",
+            "Salou_CyanNeon",
+            "Salou_AmberNeon"
           ]
         },
         {
-          "name": "Taillights",
+          "name": "Windows_Warm",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0,
+            0.03,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0,
-            -0.0
+            0.03,
+            0.0
           ],
-          "triangles": 132,
+          "triangles": 554,
           "materials": [
-            "Coupe_Taillight"
-          ]
-        },
-        {
-          "name": "Wheel_FL",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.84,
-            0.34,
-            1.36
-          ],
-          "localOffset": [
-            0.84,
-            0.34,
-            1.36
-          ],
-          "triangles": 756,
-          "materials": [
-            "Coupe_Tire",
-            "Coupe_AlloyRim",
-            "Coupe_Hub",
-            "Coupe_BrakeCaliper"
-          ]
-        },
-        {
-          "name": "Wheel_FR",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            -0.84,
-            0.34,
-            1.36
-          ],
-          "localOffset": [
-            -0.84,
-            0.34,
-            1.36
-          ],
-          "triangles": 756,
-          "materials": [
-            "Coupe_Tire",
-            "Coupe_AlloyRim",
-            "Coupe_Hub",
-            "Coupe_BrakeCaliper"
-          ]
-        },
-        {
-          "name": "Wheel_RL",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.84,
-            0.34,
-            -1.32
-          ],
-          "localOffset": [
-            0.84,
-            0.34,
-            -1.32
-          ],
-          "triangles": 756,
-          "materials": [
-            "Coupe_Tire",
-            "Coupe_AlloyRim",
-            "Coupe_Hub",
-            "Coupe_BrakeCaliper"
-          ]
-        },
-        {
-          "name": "Wheel_RR",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            -0.84,
-            0.34,
-            -1.32
-          ],
-          "localOffset": [
-            -0.84,
-            0.34,
-            -1.32
-          ],
-          "triangles": 756,
-          "materials": [
-            "Coupe_Tire",
-            "Coupe_AlloyRim",
-            "Coupe_Hub",
-            "Coupe_BrakeCaliper"
+            "Salou_ShopGlass",
+            "Salou_WroughtIron",
+            "Salou_BrushedBrass",
+            "Salou_WarmWindow",
+            "Salou_DarkWindow"
           ]
         }
       ],
-      "wheelRadius": 0.34,
-      "wheelbase": 2.68,
-      "trackWidth": 1.68,
+      "modularWidth": 6.0,
+      "facadeFrontZ": 0.0,
       "animatableParts": [
-        "Wheel_FL",
-        "Wheel_FR",
-        "Wheel_RL",
-        "Wheel_RR"
-      ],
-      "key": "getaway_car"
+        "Windows_Warm",
+        "Neon_Sign"
+      ]
     },
-    "police_car": {
-      "file": "police_car.glb",
-      "url": "/assets/models/police_car.glb",
-      "category": "vehicle",
-      "description": "Catalan Mossos-inspired night patrol cruiser with navy/white/crimson livery, front bullbar, separate pulsing Lightbar_Blue/Lightbar_Red pods, and 4 pivoted wheels.",
-      "sizeBytes": 219684,
-      "triangles": 3600,
+    "dresden_pillar": {
+      "key": "dresden_pillar",
+      "file": "dresden_pillar.glb",
+      "url": "/assets/models/dresden_pillar.glb",
+      "category": "environment",
+      "description": "Photorealistic Dresdner Barock Elbsandstein concave-fluted Corinthian columns, sculpted voussoir arch & keystone cartouche, veined marble niches, and gilded bronze glass wall sconces.",
+      "sizeBytes": 1356588,
+      "triangles": 14880,
+      "textures": 10,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 2.12,
-        "height": 1.7,
-        "depth": 4.7842
+        "width": 3.4,
+        "height": 5.85,
+        "depth": 1.62
       },
       "bounds": {
         "min": [
-          -1.06,
+          -1.7,
           0.0,
-          -2.29
+          -0.78
         ],
         "max": [
-          1.06,
           1.7,
-          2.4942
+          5.85,
+          0.84
         ]
       },
       "originOffset": [
@@ -290,277 +217,117 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Body",
-        "Glass",
-        "Headlights",
-        "Taillights",
-        "Lightbar_Base",
-        "Lightbar_Blue",
-        "Lightbar_Red",
-        "Wheel_FL",
-        "Wheel_FR",
-        "Wheel_RL",
-        "Wheel_RR"
+        "Gold_Trim",
+        "Sandstone_Column",
+        "Sconce_Glow"
       ],
       "nodes": [
         {
-          "name": "Body",
+          "name": "Gold_Trim",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 1456,
+          "triangles": 2432,
           "materials": [
-            "Police_Navy",
-            "Police_White",
-            "Police_CatalanRed",
-            "Police_Trim",
-            "Police_Plate"
+            "Dresden_GoldLeaf",
+            "Dresden_DarkMarble",
+            "Dresden_Bronze",
+            "Dresden_FrostedGlobe"
           ]
         },
         {
-          "name": "Glass",
+          "name": "Sandstone_Column",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 8,
+          "triangles": 12112,
           "materials": [
-            "Police_Glass"
+            "Dresden_AgedSandstone",
+            "Dresden_Elbsandstein",
+            "Dresden_DarkMarble"
           ]
         },
         {
-          "name": "Headlights",
+          "name": "Sconce_Glow",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 88,
+          "triangles": 336,
           "materials": [
-            "Police_Headlight"
-          ]
-        },
-        {
-          "name": "Taillights",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "triangles": 88,
-          "materials": [
-            "Police_Taillight"
-          ]
-        },
-        {
-          "name": "Lightbar_Base",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "triangles": 176,
-          "materials": [
-            "Police_Trim",
-            "Police_Chrome"
-          ]
-        },
-        {
-          "name": "Lightbar_Blue",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "triangles": 44,
-          "materials": [
-            "Police_LightbarBlue"
-          ]
-        },
-        {
-          "name": "Lightbar_Red",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "triangles": 44,
-          "materials": [
-            "Police_LightbarRed"
-          ]
-        },
-        {
-          "name": "Wheel_FL",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.86,
-            0.35,
-            1.38
-          ],
-          "localOffset": [
-            0.86,
-            0.35,
-            1.38
-          ],
-          "triangles": 424,
-          "materials": [
-            "Police_Tire",
-            "Police_Steelie",
-            "Police_Hubcap"
-          ]
-        },
-        {
-          "name": "Wheel_FR",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            -0.86,
-            0.35,
-            1.38
-          ],
-          "localOffset": [
-            -0.86,
-            0.35,
-            1.38
-          ],
-          "triangles": 424,
-          "materials": [
-            "Police_Tire",
-            "Police_Steelie",
-            "Police_Hubcap"
-          ]
-        },
-        {
-          "name": "Wheel_RL",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.86,
-            0.35,
-            -1.36
-          ],
-          "localOffset": [
-            0.86,
-            0.35,
-            -1.36
-          ],
-          "triangles": 424,
-          "materials": [
-            "Police_Tire",
-            "Police_Steelie",
-            "Police_Hubcap"
-          ]
-        },
-        {
-          "name": "Wheel_RR",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            -0.86,
-            0.35,
-            -1.36
-          ],
-          "localOffset": [
-            -0.86,
-            0.35,
-            -1.36
-          ],
-          "triangles": 424,
-          "materials": [
-            "Police_Tire",
-            "Police_Steelie",
-            "Police_Hubcap"
+            "Dresden_FilamentGlow"
           ]
         }
       ],
-      "wheelRadius": 0.35,
-      "wheelbase": 2.74,
-      "trackWidth": 1.72,
-      "animatableParts": [
-        "Wheel_FL",
-        "Wheel_FR",
-        "Wheel_RL",
-        "Wheel_RR",
-        "Lightbar_Blue",
-        "Lightbar_Red"
+      "modularWidth": 3.2,
+      "sconceLights": [
+        [
+          -1.1,
+          2.58,
+          0.72
+        ],
+        [
+          1.1,
+          2.58,
+          0.72
+        ]
       ],
-      "key": "police_car"
+      "animatableParts": [
+        "Sconce_Glow"
+      ]
     },
-    "character_mara": {
-      "file": "character_mara.glb",
-      "url": "/assets/models/character_mara.glb",
-      "category": "character",
-      "description": "Mara Voss (protagonist): stylized night-noir security engineer in dark popped-collar tech-jacket, leather crossbody satchel, and glowing cyan wrist scanner.",
-      "sizeBytes": 193260,
-      "triangles": 2612,
+    "palm_tree": {
+      "key": "palm_tree",
+      "file": "palm_tree.glb",
+      "url": "/assets/models/palm_tree.glb",
+      "category": "environment",
+      "description": "Photorealistic Mediterranean Salou coastal palm tree with curved fibrous ringed trunk and crown-pivoted multi-leaflet feathered palm fronds.",
+      "sizeBytes": 769648,
+      "triangles": 6652,
+      "textures": 9,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 0.6209,
-        "height": 1.77,
-        "depth": 0.331
+        "width": 5.9681,
+        "height": 7.3643,
+        "depth": 5.9931
       },
       "bounds": {
         "min": [
-          -0.3105,
+          -2.5969,
           0.0,
-          -0.173
+          -2.6444
         ],
         "max": [
-          0.3105,
-          1.77,
-          0.158
+          3.3712,
+          7.3643,
+          3.3488
         ]
       },
       "originOffset": [
@@ -571,212 +338,84 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Leg_L",
-        "Leg_R",
-        "Torso",
-        "Head",
-        "Arm_L",
-        "Arm_R"
+        "Canopy",
+        "Trunk"
       ],
       "nodes": [
         {
-          "name": "Root",
-          "type": "EMPTY",
+          "name": "Canopy",
+          "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0.4368,
+            5.9867,
+            0.1909
           ],
           "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ]
-        },
-        {
-          "name": "Pelvis",
-          "type": "EMPTY",
-          "parent": "Root",
-          "worldPivot": [
-            0.0,
-            0.9,
-            -0.0
+            0.4368,
+            5.9867,
+            0.1909
           ],
-          "localOffset": [
-            0.0,
-            0.9,
-            -0.0
-          ]
-        },
-        {
-          "name": "Leg_L",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            0.095,
-            0.88,
-            -0.0
-          ],
-          "localOffset": [
-            0.095,
-            -0.02,
-            -0.0
-          ],
-          "triangles": 220,
+          "triangles": 3464,
           "materials": [
-            "Mara_Trousers",
-            "Mara_Boots",
-            "Mara_JacketTrim"
+            "Palm_RachisStem",
+            "Palm_LeafEmerald",
+            "Palm_LeafOlive"
           ]
         },
         {
-          "name": "Leg_R",
+          "name": "Trunk",
           "type": "MESH",
-          "parent": "Pelvis",
+          "parent": null,
           "worldPivot": [
-            -0.095,
-            0.88,
-            -0.0
-          ],
-          "localOffset": [
-            -0.095,
-            -0.02,
-            -0.0
-          ],
-          "triangles": 220,
-          "materials": [
-            "Mara_Trousers",
-            "Mara_Boots",
-            "Mara_JacketTrim"
-          ]
-        },
-        {
-          "name": "Torso",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            0.0,
-            0.94,
-            -0.0
+            0,
+            0.0667,
+            0
           ],
           "localOffset": [
             0.0,
-            0.04,
-            -0.0
+            0.0667,
+            0.0
           ],
-          "triangles": 640,
+          "triangles": 3188,
           "materials": [
-            "Mara_TechJacket",
-            "Mara_InnerTop",
-            "Mara_Brass",
-            "Mara_JacketTrim",
-            "Mara_AccentAmber",
-            "Mara_SatchelLeather",
-            "Mara_ScannerCyan"
-          ]
-        },
-        {
-          "name": "Head",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.0,
-            1.45,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.51,
-            -0.0
-          ],
-          "triangles": 860,
-          "materials": [
-            "Mara_Skin",
-            "Mara_Hair",
-            "Mara_Eye",
-            "Mara_JacketTrim",
-            "Mara_ScannerCyan"
-          ]
-        },
-        {
-          "name": "Arm_L",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.215,
-            1.37,
-            -0.0
-          ],
-          "localOffset": [
-            0.215,
-            0.43,
-            -0.0
-          ],
-          "triangles": 364,
-          "materials": [
-            "Mara_TechJacket",
-            "Mara_JacketTrim",
-            "Mara_ScannerCyan",
-            "Mara_Skin"
-          ]
-        },
-        {
-          "name": "Arm_R",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            -0.215,
-            1.37,
-            -0.0
-          ],
-          "localOffset": [
-            -0.215,
-            0.43,
-            -0.0
-          ],
-          "triangles": 308,
-          "materials": [
-            "Mara_TechJacket",
-            "Mara_JacketTrim",
-            "Mara_Skin"
+            "Palm_FibrousBark",
+            "Palm_CrownFiber",
+            "Palm_Dates"
           ]
         }
       ],
-      "rigHierarchy": "Root > Pelvis > (Leg_L, Leg_R, Torso > (Head, Arm_L, Arm_R))",
       "animatableParts": [
-        "Pelvis",
-        "Torso",
-        "Head",
-        "Arm_L",
-        "Arm_R",
-        "Leg_L",
-        "Leg_R"
+        "Canopy"
       ],
-      "key": "character_mara"
+      "swayNote": "Oscillate Canopy.rotation.x/z by +-0.03 rad for coastal breeze."
     },
-    "character_crew": {
-      "file": "character_crew.glb",
-      "url": "/assets/models/character_crew.glb",
-      "category": "character",
-      "description": "Heist crew accomplice in dark utility bomber jacket, warm amber hoodie accent, knit beanie, cargo pants, and removable gear Backpack.",
-      "sizeBytes": 165284,
-      "triangles": 2252,
+    "streetlamp": {
+      "key": "streetlamp",
+      "file": "streetlamp.glb",
+      "url": "/assets/models/streetlamp.glb",
+      "category": "environment",
+      "description": "Ornate cast-iron Mediterranean coastal lamppost with fluted pedestal, scrolled filigree bracket, glass-paned hexagonal lantern cage, and warm tungsten filament core.",
+      "sizeBytes": 276032,
+      "triangles": 2512,
+      "textures": 3,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 0.6609,
-        "height": 1.8014,
-        "depth": 0.438
+        "width": 0.6,
+        "height": 4.8052,
+        "depth": 1.395
       },
       "bounds": {
         "min": [
-          -0.3305,
+          -0.3,
           0.0,
-          -0.28
+          -0.3
         ],
         "max": [
-          0.3305,
-          1.8014,
-          0.158
+          0.3,
+          4.8052,
+          1.095
         ]
       },
       "originOffset": [
@@ -787,469 +426,88 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Leg_L",
-        "Leg_R",
-        "Torso",
-        "Backpack",
-        "Head",
-        "Arm_L",
-        "Arm_R"
+        "Lamp_Glow",
+        "Lamp_Post"
       ],
       "nodes": [
         {
-          "name": "Root",
-          "type": "EMPTY",
+          "name": "Lamp_Glow",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0,
+            4.21,
+            0.84
+          ],
+          "localOffset": [
+            0.0,
+            4.21,
+            0.84
+          ],
+          "triangles": 288,
+          "materials": [
+            "Lamp_EdisonBulb",
+            "Lamp_FilamentCore"
+          ]
+        },
+        {
+          "name": "Lamp_Post",
+          "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
-          ]
-        },
-        {
-          "name": "Pelvis",
-          "type": "EMPTY",
-          "parent": "Root",
-          "worldPivot": [
-            0.0,
-            0.91,
-            -0.0
+            0.0
           ],
-          "localOffset": [
-            0.0,
-            0.91,
-            -0.0
-          ]
-        },
-        {
-          "name": "Leg_L",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            0.105,
-            0.89,
-            -0.0
-          ],
-          "localOffset": [
-            0.105,
-            -0.02,
-            -0.0
-          ],
-          "triangles": 264,
+          "triangles": 2224,
           "materials": [
-            "Crew_CargoPants",
-            "Crew_DarkTrim",
-            "Crew_Boots"
-          ]
-        },
-        {
-          "name": "Leg_R",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            -0.105,
-            0.89,
-            -0.0
-          ],
-          "localOffset": [
-            -0.105,
-            -0.02,
-            -0.0
-          ],
-          "triangles": 264,
-          "materials": [
-            "Crew_CargoPants",
-            "Crew_DarkTrim",
-            "Crew_Boots"
-          ]
-        },
-        {
-          "name": "Torso",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            0.0,
-            0.95,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.04,
-            -0.0
-          ],
-          "triangles": 396,
-          "materials": [
-            "Crew_DarkTrim",
-            "Crew_UtilityJacket",
-            "Crew_AccentHoodie",
-            "Crew_Metal",
-            "Crew_Backpack"
-          ]
-        },
-        {
-          "name": "Backpack",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.0,
-            0.95,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "triangles": 264,
-          "materials": [
-            "Crew_Backpack",
-            "Crew_DarkTrim",
-            "Crew_Metal"
-          ]
-        },
-        {
-          "name": "Head",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.0,
-            1.47,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.52,
-            -0.0
-          ],
-          "triangles": 448,
-          "materials": [
-            "Crew_Skin",
-            "Crew_Hair",
-            "Crew_Eye",
-            "Crew_Beanie",
-            "Crew_DarkTrim"
-          ]
-        },
-        {
-          "name": "Arm_L",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.235,
-            1.38,
-            -0.0
-          ],
-          "localOffset": [
-            0.235,
-            0.43,
-            -0.0
-          ],
-          "triangles": 308,
-          "materials": [
-            "Crew_UtilityJacket",
-            "Crew_DarkTrim",
-            "Crew_Skin"
-          ]
-        },
-        {
-          "name": "Arm_R",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            -0.235,
-            1.38,
-            -0.0
-          ],
-          "localOffset": [
-            -0.235,
-            0.43,
-            -0.0
-          ],
-          "triangles": 308,
-          "materials": [
-            "Crew_UtilityJacket",
-            "Crew_DarkTrim",
-            "Crew_Skin"
+            "Lamp_CastIron",
+            "Lamp_AgedBronze",
+            "Lamp_LanternGlass",
+            "Lamp_SocketCeramic"
           ]
         }
       ],
-      "rigHierarchy": "Root > Pelvis > (Leg_L, Leg_R, Torso > (Backpack, Head, Arm_L, Arm_R))",
-      "animatableParts": [
-        "Pelvis",
-        "Torso",
-        "Head",
-        "Arm_L",
-        "Arm_R",
-        "Leg_L",
-        "Leg_R",
-        "Backpack"
-      ],
-      "key": "character_crew"
-    },
-    "character_guard": {
-      "file": "character_guard.glb",
-      "url": "/assets/models/character_guard.glb",
-      "category": "character",
-      "description": "Securion / Catalan private security guard in crisp navy uniform, silver badge, peaked patrol cap, hip radio, and held emissive Flashlight.",
-      "sizeBytes": 167720,
-      "triangles": 2264,
-      "dimensions": {
-        "width": 0.6609,
-        "height": 1.7748,
-        "depth": 0.381
-      },
-      "bounds": {
-        "min": [
-          -0.3305,
-          0.0,
-          -0.12
-        ],
-        "max": [
-          0.3305,
-          1.7748,
-          0.261
-        ]
-      },
-      "originOffset": [
+      "lightOrigin": [
         0.0,
-        0.0,
-        0.0
+        4.18,
+        0.84
       ],
-      "forwardAxis": "+Z",
-      "upAxis": "+Y",
-      "subMeshes": [
-        "Leg_L",
-        "Leg_R",
-        "Torso",
-        "Head",
-        "Arm_L",
-        "Arm_R",
-        "Flashlight"
-      ],
-      "nodes": [
-        {
-          "name": "Root",
-          "type": "EMPTY",
-          "parent": null,
-          "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.0,
-            -0.0
-          ]
-        },
-        {
-          "name": "Pelvis",
-          "type": "EMPTY",
-          "parent": "Root",
-          "worldPivot": [
-            0.0,
-            0.92,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.92,
-            -0.0
-          ]
-        },
-        {
-          "name": "Leg_L",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            0.105,
-            0.9,
-            -0.0
-          ],
-          "localOffset": [
-            0.105,
-            -0.02,
-            -0.0
-          ],
-          "triangles": 220,
-          "materials": [
-            "Guard_DarkNavy",
-            "Guard_DutyBelt"
-          ]
-        },
-        {
-          "name": "Leg_R",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            -0.105,
-            0.9,
-            -0.0
-          ],
-          "localOffset": [
-            -0.105,
-            -0.02,
-            -0.0
-          ],
-          "triangles": 220,
-          "materials": [
-            "Guard_DarkNavy",
-            "Guard_DutyBelt"
-          ]
-        },
-        {
-          "name": "Torso",
-          "type": "MESH",
-          "parent": "Pelvis",
-          "worldPivot": [
-            0.0,
-            0.96,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.04,
-            -0.0
-          ],
-          "triangles": 516,
-          "materials": [
-            "Guard_DarkNavy",
-            "Guard_UniformNavy",
-            "Guard_SilverBadge",
-            "Guard_EpauletteBlue",
-            "Guard_DutyBelt"
-          ]
-        },
-        {
-          "name": "Head",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.0,
-            1.48,
-            -0.0
-          ],
-          "localOffset": [
-            0.0,
-            0.52,
-            -0.0
-          ],
-          "triangles": 472,
-          "materials": [
-            "Guard_Skin",
-            "Guard_Hair",
-            "Guard_Eye",
-            "Guard_UniformNavy",
-            "Guard_DutyBelt",
-            "Guard_CapVisor",
-            "Guard_SilverBadge"
-          ]
-        },
-        {
-          "name": "Arm_L",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            0.235,
-            1.39,
-            -0.0
-          ],
-          "localOffset": [
-            0.235,
-            0.43,
-            -0.0
-          ],
-          "triangles": 352,
-          "materials": [
-            "Guard_UniformNavy",
-            "Guard_EpauletteBlue",
-            "Guard_DarkNavy",
-            "Guard_Skin"
-          ]
-        },
-        {
-          "name": "Arm_R",
-          "type": "MESH",
-          "parent": "Torso",
-          "worldPivot": [
-            -0.235,
-            1.39,
-            -0.0
-          ],
-          "localOffset": [
-            -0.235,
-            0.43,
-            -0.0
-          ],
-          "triangles": 352,
-          "materials": [
-            "Guard_UniformNavy",
-            "Guard_EpauletteBlue",
-            "Guard_DarkNavy",
-            "Guard_Skin"
-          ]
-        },
-        {
-          "name": "Flashlight",
-          "type": "MESH",
-          "parent": "Arm_R",
-          "worldPivot": [
-            -0.283,
-            0.83,
-            0.075
-          ],
-          "localOffset": [
-            -0.048,
-            -0.56,
-            0.075
-          ],
-          "triangles": 132,
-          "materials": [
-            "Guard_FlashlightBody",
-            "Guard_FlashlightLens"
-          ]
-        }
-      ],
-      "rigHierarchy": "Root > Pelvis > (Leg_L, Leg_R, Torso > (Head, Arm_L, Arm_R > Flashlight))",
       "animatableParts": [
-        "Pelvis",
-        "Torso",
-        "Head",
-        "Arm_L",
-        "Arm_R",
-        "Leg_L",
-        "Leg_R",
-        "Flashlight"
-      ],
-      "key": "character_guard"
+        "Lamp_Glow"
+      ]
     },
     "safe": {
+      "key": "safe",
       "file": "safe.glb",
       "url": "/assets/models/safe.glb",
       "category": "prop",
-      "description": "Heavy bank/vault safe with hollowed loot interior, hinge-pivoted Safe_Door, spinning 3-spoke Safe_Dial, and status LED.",
-      "sizeBytes": 147048,
-      "triangles": 2196,
+      "description": "Heavy photorealistic brushed-steel vault safe with chamfered armor frame, hinge-pivoted Safe_Door with locking bolts, knurled dial + 3-spoke vault wheel Safe_Dial, and interior gold/cash/jewel trays.",
+      "sizeBytes": 637176,
+      "triangles": 7160,
+      "textures": 9,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 1.122,
-        "height": 1.47,
-        "depth": 1.093
+        "width": 1.1429,
+        "height": 1.495,
+        "depth": 1.167
       },
       "bounds": {
         "min": [
-          -0.56,
+          -0.57,
           0.0,
-          -0.45
+          -0.465
         ],
         "max": [
-          0.562,
-          1.47,
-          0.643
+          0.5729,
+          1.495,
+          0.702
         ]
       },
       "originOffset": [
@@ -1261,10 +519,10 @@
       "upAxis": "+Y",
       "subMeshes": [
         "Safe_Body",
-        "Safe_Loot",
-        "Safe_Door",
         "Safe_Dial",
-        "Safe_LED"
+        "Safe_LED",
+        "Safe_Door",
+        "Safe_Loot"
       ],
       "nodes": [
         {
@@ -1274,18 +532,83 @@
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 640,
+          "triangles": 2820,
           "materials": [
-            "Safe_InteriorDark",
-            "Safe_GunmetalSteel",
-            "Safe_Brass"
+            "Safe_DarkArmor",
+            "Safe_VaultSteel",
+            "Safe_MachinedChrome",
+            "Safe_PolishedBrass",
+            "Safe_InteriorFelt"
+          ]
+        },
+        {
+          "name": "Safe_Dial",
+          "type": "MESH",
+          "parent": "Safe_Door",
+          "worldPivot": [
+            -0.05,
+            0.78,
+            0.552
+          ],
+          "localOffset": [
+            -0.54,
+            -0.02,
+            0.082
+          ],
+          "triangles": 1276,
+          "materials": [
+            "Safe_MachinedChrome",
+            "Safe_PolishedBrass"
+          ]
+        },
+        {
+          "name": "Safe_LED",
+          "type": "MESH",
+          "parent": "Safe_Door",
+          "worldPivot": [
+            0.23,
+            1.06,
+            0.565
+          ],
+          "localOffset": [
+            -0.26,
+            0.26,
+            0.095
+          ],
+          "triangles": 184,
+          "materials": [
+            "Safe_MachinedChrome",
+            "Safe_StatusLED"
+          ]
+        },
+        {
+          "name": "Safe_Door",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.49,
+            0.8,
+            0.47
+          ],
+          "localOffset": [
+            0.49,
+            0.8,
+            0.47
+          ],
+          "triangles": 1064,
+          "materials": [
+            "Safe_VaultSteel",
+            "Safe_DarkArmor",
+            "Safe_PolishedBrass",
+            "Safe_MachinedChrome",
+            "Safe_Keypad"
           ]
         },
         {
@@ -1295,79 +618,19 @@
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 512,
+          "triangles": 1816,
           "materials": [
-            "Safe_GoldBullion",
-            "Safe_CashBundle",
-            "Safe_Brass"
-          ]
-        },
-        {
-          "name": "Safe_Door",
-          "type": "MESH",
-          "parent": null,
-          "worldPivot": [
-            0.48,
-            0.78,
-            0.46
-          ],
-          "localOffset": [
-            0.48,
-            0.78,
-            0.46
-          ],
-          "triangles": 352,
-          "materials": [
-            "Safe_GunmetalSteel",
-            "Safe_InteriorDark",
-            "Safe_Brass",
-            "Safe_Chrome"
-          ]
-        },
-        {
-          "name": "Safe_Dial",
-          "type": "MESH",
-          "parent": "Safe_Door",
-          "worldPivot": [
-            -0.06,
-            0.76,
-            0.535
-          ],
-          "localOffset": [
-            -0.54,
-            -0.02,
-            0.075
-          ],
-          "triangles": 648,
-          "materials": [
-            "Safe_Chrome",
-            "Safe_Brass"
-          ]
-        },
-        {
-          "name": "Safe_LED",
-          "type": "MESH",
-          "parent": "Safe_Door",
-          "worldPivot": [
-            0.2,
-            1.06,
-            0.538
-          ],
-          "localOffset": [
-            -0.28,
-            0.28,
-            0.078
-          ],
-          "triangles": 44,
-          "materials": [
-            "Safe_StatusLED"
+            "Safe_GoldIngot",
+            "Safe_JewelTray",
+            "Safe_PolishedBrass",
+            "Safe_EuroBundle"
           ]
         }
       ],
@@ -1377,31 +640,34 @@
         "Safe_LED",
         "Safe_Loot"
       ],
-      "hingeNote": "Rotate Safe_Door around Y by -1.8 rad to swing open cleanly.",
-      "key": "safe"
+      "hingeNote": "Rotate Safe_Door around Y by -1.8 rad to swing open."
     },
     "display_case": {
+      "key": "display_case",
       "file": "display_case.glb",
       "url": "/assets/models/display_case.glb",
       "category": "prop",
-      "description": "Luxury museum/jeweler glass vitrine with ebony-brass pedestal, transparent Glass_Hood, and glowing faceted Artifact.",
-      "sizeBytes": 72684,
-      "triangles": 904,
+      "description": "Museum-grade brass/steel-framed glass vitrine on veined dark marble plinth with tufted crimson velvet cushion, ceiling micro-spotlights, and faceted sparkling royal jewel Artifact.",
+      "sizeBytes": 445268,
+      "triangles": 3040,
+      "textures": 9,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 1.02,
-        "height": 1.77,
-        "depth": 1.02
+        "width": 1.04,
+        "height": 1.7975,
+        "depth": 1.04
       },
       "bounds": {
         "min": [
-          -0.51,
+          -0.52,
           0.0,
-          -0.51
+          -0.52
         ],
         "max": [
-          0.51,
-          1.77,
-          0.51
+          0.52,
+          1.7975,
+          0.52
         ]
       },
       "originOffset": [
@@ -1412,30 +678,30 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Pedestal",
+        "Artifact",
         "Glass_Hood",
-        "Artifact"
+        "Pedestal"
       ],
       "nodes": [
         {
-          "name": "Pedestal",
+          "name": "Artifact",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            0,
+            1.28,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0,
-            -0.0
+            1.28,
+            0.0
           ],
-          "triangles": 308,
+          "triangles": 1108,
           "materials": [
-            "Vitrine_EbonyWood",
-            "Vitrine_Brass",
-            "Vitrine_CrimsonVelvet"
+            "Vitrine_RoyalGold",
+            "Vitrine_AccentGem",
+            "Vitrine_CrownJewel"
           ]
         },
         {
@@ -1445,70 +711,75 @@
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 316,
+          "triangles": 1056,
           "materials": [
-            "Vitrine_Glass",
-            "Vitrine_Brass",
-            "Vitrine_EbonyWood",
-            "Vitrine_InnerLamp"
+            "Vitrine_MuseumGlass",
+            "Vitrine_DarkSteel",
+            "Vitrine_BrushedBrass",
+            "Vitrine_MicroSpot"
           ]
         },
         {
-          "name": "Artifact",
+          "name": "Pedestal",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            1.24,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            1.24,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 280,
+          "triangles": 876,
           "materials": [
-            "Vitrine_GoldSetting",
-            "Vitrine_RoyalJewel"
+            "Vitrine_VeinedMarble",
+            "Vitrine_BrushedBrass",
+            "Vitrine_CrimsonVelvet",
+            "Vitrine_DarkSteel"
           ]
         }
       ],
       "animatableParts": [
         "Artifact",
         "Glass_Hood"
-      ],
-      "key": "display_case"
+      ]
     },
     "power_box": {
+      "key": "power_box",
       "file": "power_box.glb",
       "url": "/assets/models/power_box.glb",
       "category": "prop",
-      "description": "Wall-mounted electrical breaker cabinet with conduits, braided cables, hazard sign, pivoting Breaker_Lever, and emissive Status_LED.",
-      "sizeBytes": 62624,
-      "triangles": 932,
+      "description": "Weathered industrial Securion wall electrical junction box with galvanized steel conduits, armored cables, hinged panel revealing internal copper busbars/breakers, pivoting Breaker_Lever, and recessed Status_LED.",
+      "sizeBytes": 385272,
+      "triangles": 2896,
+      "textures": 6,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 0.71,
-        "height": 0.9616,
-        "depth": 0.299
+        "width": 0.762,
+        "height": 0.9751,
+        "depth": 0.307
       },
       "bounds": {
         "min": [
-          -0.32,
+          -0.33,
           0.0,
-          -0.0
+          0.0
         ],
         "max": [
-          0.39,
-          0.9616,
-          0.299
+          0.432,
+          0.9751,
+          0.307
         ]
       },
       "originOffset": [
@@ -1530,21 +801,25 @@
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0016,
-            -0.0
+            0,
+            0.0001,
+            0
           ],
           "localOffset": [
             0.0,
-            0.0016,
-            -0.0
+            0.0001,
+            0.0
           ],
-          "triangles": 440,
+          "triangles": 1964,
           "materials": [
-            "PowerBox_Conduit",
-            "PowerBox_WeatheredSteel",
-            "PowerBox_Copper",
-            "PowerBox_Cable"
+            "PowerBox_DarkIron",
+            "PowerBox_Chrome",
+            "PowerBox_GalvSteel",
+            "PowerBox_CopperBus",
+            "PowerBox_RedHandle",
+            "PowerBox_WireRed",
+            "PowerBox_WireBlue",
+            "PowerBox_ArmoredCable"
           ]
         },
         {
@@ -1552,20 +827,21 @@
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0016,
-            -0.0
+            0.28,
+            0.4801,
+            0.25
           ],
           "localOffset": [
-            0.0,
-            0.0016,
-            -0.0
+            0.28,
+            0.4801,
+            0.25
           ],
-          "triangles": 192,
+          "triangles": 408,
           "materials": [
-            "PowerBox_WeatheredSteel",
+            "PowerBox_GalvSteel",
             "PowerBox_HazardYellow",
-            "PowerBox_Conduit"
+            "PowerBox_DarkIron",
+            "PowerBox_Chrome"
           ]
         },
         {
@@ -1573,18 +849,19 @@
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.28,
-            0.5216,
+            0.29,
+            0.5201,
             0.14
           ],
           "localOffset": [
-            0.28,
-            0.5216,
+            0.29,
+            0.5201,
             0.14
           ],
-          "triangles": 116,
+          "triangles": 304,
           "materials": [
-            "PowerBox_Conduit",
+            "PowerBox_DarkIron",
+            "PowerBox_Chrome",
             "PowerBox_RedHandle"
           ]
         },
@@ -1594,17 +871,17 @@
           "parent": null,
           "worldPivot": [
             0.16,
-            0.6916,
-            0.265
+            0.7001,
+            0.272
           ],
           "localOffset": [
             0.16,
-            0.6916,
-            0.265
+            0.7001,
+            0.272
           ],
-          "triangles": 184,
+          "triangles": 220,
           "materials": [
-            "PowerBox_Conduit",
+            "PowerBox_Chrome",
             "PowerBox_GreenLED"
           ]
         }
@@ -1614,31 +891,34 @@
         "Breaker_Lever",
         "Status_LED",
         "Box_Door"
-      ],
-      "key": "power_box"
+      ]
     },
     "security_camera": {
+      "key": "security_camera",
       "file": "security_camera.glb",
       "url": "/assets/models/security_camera.glb",
       "category": "prop",
-      "description": "Wall-mounted CCTV security camera with swivel-pivoted Camera_Head and glowing red Camera_LED.",
-      "sizeBytes": 50184,
-      "triangles": 868,
+      "description": "Architectural bullet CCTV camera with bolted gooseneck bracket, armored cable whip, vented sun hood, multi-element glass lens with IR LED ring, swivel-pivoted Camera_Head, and glowing red Camera_LED.",
+      "sizeBytes": 315528,
+      "triangles": 2144,
+      "textures": 6,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 0.17,
-        "height": 0.3199,
-        "depth": 0.5701
+        "width": 0.1928,
+        "height": 0.3277,
+        "depth": 0.58
       },
       "bounds": {
         "min": [
-          -0.085,
+          -0.0964,
           0.0,
-          -0.0
+          0.0
         ],
         "max": [
-          0.085,
-          0.3199,
-          0.5701
+          0.0964,
+          0.3277,
+          0.58
         ]
       },
       "originOffset": [
@@ -1649,30 +929,28 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Camera_Mount",
+        "Camera_LED",
         "Camera_Head",
-        "Camera_LED"
+        "Camera_Mount"
       ],
       "nodes": [
         {
-          "name": "Camera_Mount",
+          "name": "Camera_LED",
           "type": "MESH",
-          "parent": null,
+          "parent": "Camera_Head",
           "worldPivot": [
-            0.0,
-            -0.02,
-            -0.0
+            0.046,
+            0.2045,
+            0.509
           ],
           "localOffset": [
-            0.0,
-            -0.02,
-            -0.0
+            0.046,
+            0.012,
+            0.259
           ],
-          "triangles": 320,
+          "triangles": 80,
           "materials": [
-            "CCTV_MountSteel",
-            "CCTV_Housing",
-            "CCTV_Bezel"
+            "CCTV_RedLED"
           ]
         },
         {
@@ -1680,39 +958,44 @@
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.19,
+            0,
+            0.1925,
             0.25
           ],
           "localOffset": [
             0.0,
-            0.19,
+            0.1925,
             0.25
           ],
-          "triangles": 468,
+          "triangles": 1580,
           "materials": [
-            "CCTV_Housing",
-            "CCTV_Bezel",
-            "CCTV_Lens"
+            "CCTV_AlumHousing",
+            "CCTV_Bolts",
+            "CCTV_OpticBaffle",
+            "CCTV_LensCoat",
+            "CCTV_GlassLens",
+            "CCTV_IRDiode"
           ]
         },
         {
-          "name": "Camera_LED",
+          "name": "Camera_Mount",
           "type": "MESH",
-          "parent": "Camera_Head",
+          "parent": null,
           "worldPivot": [
-            0.042,
-            0.204,
-            0.508
+            0,
+            -0.0175,
+            0
           ],
           "localOffset": [
-            0.042,
-            0.014,
-            0.258
+            0.0,
+            -0.0175,
+            0.0
           ],
-          "triangles": 80,
+          "triangles": 484,
           "materials": [
-            "CCTV_RedLED"
+            "CCTV_DarkCast",
+            "CCTV_Bolts",
+            "CCTV_OpticBaffle"
           ]
         }
       ],
@@ -1721,31 +1004,34 @@
         "Camera_Head",
         "Camera_LED"
       ],
-      "panNote": "Rotate Camera_Head around Y to sweep CCTV field of view.",
-      "key": "security_camera"
+      "panNote": "Rotate Camera_Head around Y to sweep FOV."
     },
-    "palm_tree": {
-      "file": "palm_tree.glb",
-      "url": "/assets/models/palm_tree.glb",
-      "category": "environment",
-      "description": "Mediterranean Salou promenade palm tree with curved ringed Trunk and crown-pivoted two-tier arching Canopy.",
-      "sizeBytes": 206140,
-      "triangles": 3274,
+    "door_detailed": {
+      "key": "door_detailed",
+      "file": "door_detailed.glb",
+      "url": "/assets/models/door_detailed.glb",
+      "category": "prop",
+      "description": "Detailed framed walnut/steel security door with glazed transom window, brass kickplate, mortise lock cylinder, lever Door_Handle, and edge-hinged Door_Leaf that physically swings open when unlocked.",
+      "sizeBytes": 387388,
+      "triangles": 3058,
+      "textures": 6,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 5.8887,
-        "height": 7.1583,
-        "depth": 5.8738
+        "width": 1.2,
+        "height": 2.4075,
+        "depth": 0.254
       },
       "bounds": {
         "min": [
-          -2.646,
+          -0.6,
           0.0,
-          -2.6396
+          -0.127
         ],
         "max": [
-          3.2427,
-          7.1583,
-          3.2342
+          0.6,
+          2.4075,
+          0.127
         ]
       },
       "originOffset": [
@@ -1756,81 +1042,108 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Trunk",
-        "Canopy"
+        "Door_Frame",
+        "Door_Handle",
+        "Door_Leaf"
       ],
       "nodes": [
         {
-          "name": "Trunk",
+          "name": "Door_Frame",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            0.0821,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            0.0821,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 1268,
+          "triangles": 1334,
           "materials": [
-            "Palm_BarkDark",
-            "Palm_BarkLight",
-            "Palm_Dates"
+            "Door_SteelHardware",
+            "Door_FrameSteel",
+            "Door_WalnutTimber",
+            "Door_TransomGlass",
+            "Door_BrushedBrass"
           ]
         },
         {
-          "name": "Canopy",
+          "name": "Door_Handle",
+          "type": "MESH",
+          "parent": "Door_Leaf",
+          "worldPivot": [
+            -0.36,
+            1.045,
+            0.0
+          ],
+          "localOffset": [
+            -0.825,
+            1.045,
+            -0.025
+          ],
+          "triangles": 240,
+          "materials": [
+            "Door_BrushedBrass"
+          ]
+        },
+        {
+          "name": "Door_Leaf",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.4169,
-            5.9321,
-            0.179
+            0.465,
+            0,
+            0.025
           ],
           "localOffset": [
-            0.4169,
-            5.9321,
-            0.179
+            0.465,
+            0.0,
+            0.025
           ],
-          "triangles": 2006,
+          "triangles": 1484,
           "materials": [
-            "Palm_FrondStem",
-            "Palm_FrondEmerald",
-            "Palm_FrondOlive"
+            "Door_WalnutTimber",
+            "Door_FrameSteel",
+            "Door_BrushedBrass",
+            "Door_SteelHardware"
           ]
         }
       ],
       "animatableParts": [
-        "Canopy"
+        "Door_Leaf",
+        "Door_Handle"
       ],
-      "swayNote": "Gently oscillate Canopy.rotation.x/z by +-0.03 rad for night coastal breeze.",
-      "key": "palm_tree"
+      "hingeNote": "Rotate Door_Leaf around Y from 0 to -1.65 rad to swing open."
     },
-    "streetlamp": {
-      "file": "streetlamp.glb",
-      "url": "/assets/models/streetlamp.glb",
+    "cafe_terrace": {
+      "key": "cafe_terrace",
+      "file": "cafe_terrace.glb",
+      "url": "/assets/models/cafe_terrace.glb",
       "category": "environment",
-      "description": "Warm Mediterranean wrought-iron promenade streetlamp with scrollwork bracket and glowing sodium-amber hexagonal Lamp_Glow.",
-      "sizeBytes": 43852,
-      "triangles": 824,
+      "description": "Salou coastal night promenade bistro terrace cluster: marble-topped brass-rim table with candle lantern, two wrought-iron scroll chairs, terracotta Mediterranean planter, and cast-iron street bollard.",
+      "sizeBytes": 1009512,
+      "triangles": 5238,
+      "textures": 18,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 0.56,
-        "height": 4.7661,
-        "depth": 1.32
+        "width": 2.7719,
+        "height": 1.2715,
+        "depth": 1.8729
       },
       "bounds": {
         "min": [
-          -0.28,
+          -1.5169,
           0.0,
-          -0.28
+          -1.0579
         ],
         "max": [
-          0.28,
-          4.7661,
-          1.04
+          1.255,
+          1.2715,
+          0.815
         ]
       },
       "originOffset": [
@@ -1841,82 +1154,171 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Lamp_Post",
-        "Lamp_Glow"
+        "Bollard",
+        "Candle_Glow",
+        "Chair_L",
+        "Chair_R",
+        "Planter",
+        "Table"
       ],
       "nodes": [
         {
-          "name": "Lamp_Post",
+          "name": "Bollard",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            0.0,
-            -0.0
+            1.12,
+            0.0015,
+            0.68
           ],
           "localOffset": [
-            0.0,
-            0.0,
-            -0.0
+            1.12,
+            0.0015,
+            0.68
           ],
-          "triangles": 804,
+          "triangles": 528,
           "materials": [
-            "Lamp_WroughtIron",
-            "Lamp_BronzeTrim"
+            "Cafe_WroughtIron",
+            "Cafe_BrassRim"
           ]
         },
         {
-          "name": "Lamp_Glow",
+          "name": "Candle_Glow",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
-            0.0,
-            4.18,
-            0.8
+            0,
+            0.8115,
+            0
           ],
           "localOffset": [
             0.0,
-            4.18,
-            0.8
+            0.8115,
+            0.0
           ],
-          "triangles": 20,
+          "triangles": 184,
           "materials": [
-            "Lamp_SodiumAmber"
+            "Cafe_EspressoCup",
+            "Cafe_CandleFlame"
+          ]
+        },
+        {
+          "name": "Chair_L",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.64,
+            0.0015,
+            -0.14
+          ],
+          "localOffset": [
+            0.64,
+            0.0015,
+            -0.14
+          ],
+          "triangles": 1480,
+          "materials": [
+            "Cafe_WroughtIron",
+            "Cafe_ChairWood"
+          ]
+        },
+        {
+          "name": "Chair_R",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.66,
+            0.0015,
+            0.08
+          ],
+          "localOffset": [
+            -0.66,
+            0.0015,
+            0.08
+          ],
+          "triangles": 1480,
+          "materials": [
+            "Cafe_WroughtIron",
+            "Cafe_ChairWood"
+          ]
+        },
+        {
+          "name": "Planter",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -1.04,
+            0.0015,
+            -0.62
+          ],
+          "localOffset": [
+            -1.04,
+            0.0015,
+            -0.62
+          ],
+          "triangles": 646,
+          "materials": [
+            "Cafe_StoneBase",
+            "Cafe_TerracottaUrn",
+            "Cafe_Soil",
+            "Cafe_ChairWood",
+            "Cafe_OliveFoliage"
+          ]
+        },
+        {
+          "name": "Table",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0,
+            0.0015,
+            0
+          ],
+          "localOffset": [
+            0.0,
+            0.0015,
+            0.0
+          ],
+          "triangles": 920,
+          "materials": [
+            "Cafe_WroughtIron",
+            "Cafe_MarbleTop",
+            "Cafe_BrassRim",
+            "Cafe_Glassware",
+            "Cafe_EspressoCup"
           ]
         }
       ],
-      "lightOrigin": [
-        0.0,
-        4.18,
-        0.8
-      ],
       "animatableParts": [
-        "Lamp_Glow"
-      ],
-      "key": "streetlamp"
+        "Candle_Glow"
+      ]
     },
-    "salou_facade": {
-      "file": "salou_facade.glb",
-      "url": "/assets/models/salou_facade.glb",
-      "category": "environment",
-      "description": "Modular 6.0m Catalan Mediterranean townhouse/hotel facade with limestone storefront, terracotta stucco, teal shutters, wrought-iron Balcony, striped Awning, warm night Windows_Warm, and cyan Neon_Sign.",
-      "sizeBytes": 271100,
-      "triangles": 3580,
+    "getaway_car": {
+      "key": "getaway_car",
+      "file": "getaway_car.glb",
+      "url": "/assets/models/getaway_car.glb",
+      "category": "vehicle",
+      "description": "Photorealistic European night getaway sports coupe with metallic clearcoat body, tinted glass, interior, headlights/taillights/brakelights, and 4 axle-pivoted wheels.",
+      "sizeBytes": 2510500,
+      "triangles": 39724,
+      "textures": 14,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 6.16,
-        "height": 8.606,
-        "depth": 2.6474
+        "width": 2.0619,
+        "height": 1.3451,
+        "depth": 4.5351
       },
       "bounds": {
         "min": [
-          -3.08,
+          -1.0309,
           0.0,
-          -1.6384
+          -2.2652
         ],
         "max": [
-          3.08,
-          8.606,
-          1.009
+          1.0309,
+          1.3451,
+          2.2699
         ]
       },
       "originOffset": [
@@ -1927,151 +1329,279 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Facade_Wall",
-        "Balcony",
-        "Awning",
-        "Windows_Warm",
-        "Neon_Sign"
+        "Body",
+        "Brakelights",
+        "Glass",
+        "Headlights",
+        "Interior",
+        "Taillights",
+        "Wheel_FL",
+        "Wheel_FR",
+        "Wheel_RL",
+        "Wheel_RR"
       ],
       "nodes": [
         {
-          "name": "Facade_Wall",
+          "name": "Body",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 2580,
+          "triangles": 20704,
           "materials": [
-            "Salou_Limestone",
-            "Salou_DarkPlinth",
-            "Salou_TerracottaStucco",
-            "Salou_DoorWood",
-            "Salou_WroughtIron",
-            "Salou_TealShutter",
-            "Salou_RoofTile"
+            "Coupe_GunmetalPaint",
+            "Coupe_GlossBlackTrim",
+            "Coupe_CarbonFiber",
+            "Coupe_HoneycombGrille",
+            "Coupe_BrushedTitanium",
+            "Coupe_ClearLens",
+            "Coupe_Plate"
           ]
         },
         {
-          "name": "Balcony",
+          "name": "Brakelights",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 592,
+          "triangles": 756,
           "materials": [
-            "Salou_Limestone",
-            "Salou_WroughtIron"
+            "Coupe_Brakelights"
           ]
         },
         {
-          "name": "Awning",
+          "name": "Glass",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 80,
+          "triangles": 2688,
           "materials": [
-            "Salou_AwningCrimson",
-            "Salou_AwningCream",
-            "Salou_WroughtIron"
+            "Coupe_TintedGlass"
           ]
         },
         {
-          "name": "Windows_Warm",
+          "name": "Headlights",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 228,
+          "triangles": 480,
           "materials": [
-            "Salou_WarmWindow",
-            "Salou_WroughtIron",
-            "Salou_DarkWindow"
+            "Coupe_Headlights"
           ]
         },
         {
-          "name": "Neon_Sign",
+          "name": "Interior",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
           "localOffset": [
             0.0,
-            0.02,
-            -0.0
+            0.0,
+            0.0
           ],
-          "triangles": 100,
+          "triangles": 3812,
           "materials": [
-            "Salou_WroughtIron",
-            "Salou_CyanNeon"
+            "Coupe_GlossBlackTrim",
+            "Coupe_CockpitDash",
+            "Coupe_CockpitGlow",
+            "Coupe_NappaLeather"
+          ]
+        },
+        {
+          "name": "Taillights",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 388,
+          "materials": [
+            "Coupe_Taillights"
+          ]
+        },
+        {
+          "name": "Wheel_FL",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.82,
+            0.345,
+            1.37
+          ],
+          "localOffset": [
+            0.82,
+            0.345,
+            1.37
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Coupe_TireTread",
+            "Coupe_TireSidewall",
+            "Coupe_MachinedAlloy",
+            "Coupe_RimBarrel",
+            "Coupe_BrushedTitanium",
+            "Coupe_BrakeRotor",
+            "Coupe_BremboRed"
+          ]
+        },
+        {
+          "name": "Wheel_FR",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.82,
+            0.345,
+            1.37
+          ],
+          "localOffset": [
+            -0.82,
+            0.345,
+            1.37
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Coupe_TireTread",
+            "Coupe_TireSidewall",
+            "Coupe_MachinedAlloy",
+            "Coupe_RimBarrel",
+            "Coupe_BrushedTitanium",
+            "Coupe_BrakeRotor",
+            "Coupe_BremboRed"
+          ]
+        },
+        {
+          "name": "Wheel_RL",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.82,
+            0.345,
+            -1.34
+          ],
+          "localOffset": [
+            0.82,
+            0.345,
+            -1.34
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Coupe_TireTread",
+            "Coupe_TireSidewall",
+            "Coupe_MachinedAlloy",
+            "Coupe_RimBarrel",
+            "Coupe_BrushedTitanium",
+            "Coupe_BrakeRotor",
+            "Coupe_BremboRed"
+          ]
+        },
+        {
+          "name": "Wheel_RR",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.82,
+            0.345,
+            -1.34
+          ],
+          "localOffset": [
+            -0.82,
+            0.345,
+            -1.34
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Coupe_TireTread",
+            "Coupe_TireSidewall",
+            "Coupe_MachinedAlloy",
+            "Coupe_RimBarrel",
+            "Coupe_BrushedTitanium",
+            "Coupe_BrakeRotor",
+            "Coupe_BremboRed"
           ]
         }
       ],
-      "modularWidth": 6.0,
-      "facadeFrontZ": 0.0,
+      "wheelRadius": 0.345,
       "animatableParts": [
-        "Windows_Warm",
-        "Neon_Sign"
-      ],
-      "key": "salou_facade"
+        "Wheel_FL",
+        "Wheel_FR",
+        "Wheel_RL",
+        "Wheel_RR",
+        "Headlights",
+        "Taillights",
+        "Brakelights"
+      ]
     },
-    "dresden_pillar": {
-      "file": "dresden_pillar.glb",
-      "url": "/assets/models/dresden_pillar.glb",
-      "category": "environment",
-      "description": "Baroque Dresden Elbsandstein fluted column and vaulted arch module with gilded Gold_Trim and glowing wall Sconce_Glow for the Kurfuerstliche Schatzkammer finale.",
-      "sizeBytes": 218540,
-      "triangles": 3880,
+    "police_car": {
+      "key": "police_car",
+      "file": "police_car.glb",
+      "url": "/assets/models/police_car.glb",
+      "category": "vehicle",
+      "description": "Photorealistic Catalan Mossos-inspired night patrol cruiser with navy/white/crimson livery, roof LED lightbar, and 4 axle-pivoted wheels.",
+      "sizeBytes": 2512740,
+      "triangles": 41472,
+      "textures": 13,
+      "skinned": false,
+      "animations": [],
       "dimensions": {
-        "width": 3.36,
-        "height": 5.84,
-        "depth": 1.5523
+        "width": 2.0862,
+        "height": 1.693,
+        "depth": 4.7996
       },
       "bounds": {
         "min": [
-          -1.68,
+          -1.0431,
           0.0,
-          -0.76
+          -2.3529
         ],
         "max": [
-          1.68,
-          5.84,
-          0.7923
+          1.0431,
+          1.693,
+          2.4468
         ]
       },
       "originOffset": [
@@ -2082,89 +1612,1979 @@
       "forwardAxis": "+Z",
       "upAxis": "+Y",
       "subMeshes": [
-        "Sandstone_Column",
-        "Gold_Trim",
-        "Sconce_Glow"
+        "Body",
+        "Brakelights",
+        "Glass",
+        "Headlights",
+        "Interior",
+        "Lightbar_Base",
+        "Lightbar_Blue",
+        "Lightbar_Red",
+        "Taillights",
+        "Wheel_FL",
+        "Wheel_FR",
+        "Wheel_RL",
+        "Wheel_RR"
       ],
       "nodes": [
         {
-          "name": "Sandstone_Column",
+          "name": "Body",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 2172,
+          "triangles": 21220,
           "materials": [
-            "Dresden_AgedStone",
-            "Dresden_Elbsandstein",
-            "Dresden_DarkMarble"
+            "Police_MossosLivery",
+            "Police_TacticalTrim",
+            "Police_HoneycombGrille",
+            "Police_BrushedAlloy",
+            "Police_ClearLens",
+            "Police_Plate",
+            "Police_NavyPaint"
           ]
         },
         {
-          "name": "Gold_Trim",
+          "name": "Brakelights",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 1428,
+          "triangles": 756,
           "materials": [
-            "Dresden_GoldLeaf",
-            "Dresden_Bronze"
+            "Police_Brakelights"
           ]
         },
         {
-          "name": "Sconce_Glow",
+          "name": "Glass",
           "type": "MESH",
           "parent": null,
           "worldPivot": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
           "localOffset": [
             0.0,
             0.0,
-            -0.0
+            0.0
           ],
-          "triangles": 280,
+          "triangles": 2688,
           "materials": [
-            "Dresden_SconceGlow"
+            "Police_TintedGlass"
+          ]
+        },
+        {
+          "name": "Headlights",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 480,
+          "materials": [
+            "Police_Headlights"
+          ]
+        },
+        {
+          "name": "Interior",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 3932,
+          "materials": [
+            "Police_TacticalTrim",
+            "Police_Dash",
+            "Police_MDTScreen",
+            "Police_InteriorSeat"
+          ]
+        },
+        {
+          "name": "Lightbar_Base",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 756,
+          "materials": [
+            "Police_TacticalTrim",
+            "Police_BrushedAlloy"
+          ]
+        },
+        {
+          "name": "Lightbar_Blue",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 296,
+          "materials": [
+            "Police_LightbarBlue"
+          ]
+        },
+        {
+          "name": "Lightbar_Red",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 296,
+          "materials": [
+            "Police_LightbarRed"
+          ]
+        },
+        {
+          "name": "Taillights",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 152,
+          "materials": [
+            "Police_Taillights"
+          ]
+        },
+        {
+          "name": "Wheel_FL",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.81,
+            0.35,
+            1.4
+          ],
+          "localOffset": [
+            0.81,
+            0.35,
+            1.4
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Police_TireTread",
+            "Police_TireSidewall",
+            "Police_PatrolAlloy",
+            "Police_RimBarrel",
+            "Police_BrushedAlloy",
+            "Police_BrakeRotor",
+            "Police_Caliper"
+          ]
+        },
+        {
+          "name": "Wheel_FR",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.81,
+            0.35,
+            1.4
+          ],
+          "localOffset": [
+            -0.81,
+            0.35,
+            1.4
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Police_TireTread",
+            "Police_TireSidewall",
+            "Police_PatrolAlloy",
+            "Police_RimBarrel",
+            "Police_BrushedAlloy",
+            "Police_BrakeRotor",
+            "Police_Caliper"
+          ]
+        },
+        {
+          "name": "Wheel_RL",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.81,
+            0.35,
+            -1.35
+          ],
+          "localOffset": [
+            0.81,
+            0.35,
+            -1.35
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Police_TireTread",
+            "Police_TireSidewall",
+            "Police_PatrolAlloy",
+            "Police_RimBarrel",
+            "Police_BrushedAlloy",
+            "Police_BrakeRotor",
+            "Police_Caliper"
+          ]
+        },
+        {
+          "name": "Wheel_RR",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.81,
+            0.35,
+            -1.35
+          ],
+          "localOffset": [
+            -0.81,
+            0.35,
+            -1.35
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Police_TireTread",
+            "Police_TireSidewall",
+            "Police_PatrolAlloy",
+            "Police_RimBarrel",
+            "Police_BrushedAlloy",
+            "Police_BrakeRotor",
+            "Police_Caliper"
           ]
         }
       ],
-      "modularWidth": 3.2,
-      "sconceLights": [
-        [
-          -1.1,
-          2.61,
-          0.72
-        ],
-        [
-          1.1,
-          2.61,
-          0.72
-        ]
-      ],
+      "wheelRadius": 0.35,
       "animatableParts": [
-        "Sconce_Glow"
+        "Wheel_FL",
+        "Wheel_FR",
+        "Wheel_RL",
+        "Wheel_RR",
+        "Lightbar_Blue",
+        "Lightbar_Red"
+      ]
+    },
+    "traffic_car": {
+      "key": "traffic_car",
+      "file": "traffic_car.glb",
+      "url": "/assets/models/traffic_car.glb",
+      "category": "vehicle",
+      "description": "Photorealistic European compact sedan/hatchback for ambient Salou night traffic.",
+      "sizeBytes": 2284140,
+      "triangles": 40116,
+      "textures": 12,
+      "skinned": false,
+      "animations": [],
+      "dimensions": {
+        "width": 2.0331,
+        "height": 1.4418,
+        "depth": 4.3428
+      },
+      "bounds": {
+        "min": [
+          -1.0165,
+          0.0,
+          -2.1629
+        ],
+        "max": [
+          1.0165,
+          1.4418,
+          2.1799
+        ]
+      },
+      "originOffset": [
+        0.0,
+        0.0,
+        0.0
       ],
-      "key": "dresden_pillar"
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "subMeshes": [
+        "Body",
+        "Brakelights",
+        "Glass",
+        "Headlights",
+        "Interior",
+        "Taillights",
+        "Wheel_FL",
+        "Wheel_FR",
+        "Wheel_RL",
+        "Wheel_RR"
+      ],
+      "nodes": [
+        {
+          "name": "Body",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 21332,
+          "materials": [
+            "Traffic_BodyPaint",
+            "Traffic_DarkTrim",
+            "Traffic_HoneycombGrille",
+            "Traffic_ChromeTrim",
+            "Traffic_ClearLens",
+            "Traffic_Plate"
+          ]
+        },
+        {
+          "name": "Brakelights",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 756,
+          "materials": [
+            "Traffic_Brakelights"
+          ]
+        },
+        {
+          "name": "Glass",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 2688,
+          "materials": [
+            "Traffic_TintedGlass"
+          ]
+        },
+        {
+          "name": "Headlights",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 480,
+          "materials": [
+            "Traffic_Headlights"
+          ]
+        },
+        {
+          "name": "Interior",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 3812,
+          "materials": [
+            "Traffic_DarkTrim",
+            "Traffic_Dash",
+            "Traffic_CockpitGlow",
+            "Traffic_InteriorCloth"
+          ]
+        },
+        {
+          "name": "Taillights",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 152,
+          "materials": [
+            "Traffic_Taillights"
+          ]
+        },
+        {
+          "name": "Wheel_FL",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.79,
+            0.33,
+            1.32
+          ],
+          "localOffset": [
+            0.79,
+            0.33,
+            1.32
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Traffic_TireTread",
+            "Traffic_TireSidewall",
+            "Traffic_SilverAlloy",
+            "Traffic_RimBarrel",
+            "Traffic_ChromeTrim",
+            "Traffic_BrakeRotor",
+            "Traffic_Caliper"
+          ]
+        },
+        {
+          "name": "Wheel_FR",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.79,
+            0.33,
+            1.32
+          ],
+          "localOffset": [
+            -0.79,
+            0.33,
+            1.32
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Traffic_TireTread",
+            "Traffic_TireSidewall",
+            "Traffic_SilverAlloy",
+            "Traffic_RimBarrel",
+            "Traffic_ChromeTrim",
+            "Traffic_BrakeRotor",
+            "Traffic_Caliper"
+          ]
+        },
+        {
+          "name": "Wheel_RL",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            0.79,
+            0.33,
+            -1.28
+          ],
+          "localOffset": [
+            0.79,
+            0.33,
+            -1.28
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Traffic_TireTread",
+            "Traffic_TireSidewall",
+            "Traffic_SilverAlloy",
+            "Traffic_RimBarrel",
+            "Traffic_ChromeTrim",
+            "Traffic_BrakeRotor",
+            "Traffic_Caliper"
+          ]
+        },
+        {
+          "name": "Wheel_RR",
+          "type": "MESH",
+          "parent": null,
+          "worldPivot": [
+            -0.79,
+            0.33,
+            -1.28
+          ],
+          "localOffset": [
+            -0.79,
+            0.33,
+            -1.28
+          ],
+          "triangles": 2724,
+          "materials": [
+            "Traffic_TireTread",
+            "Traffic_TireSidewall",
+            "Traffic_SilverAlloy",
+            "Traffic_RimBarrel",
+            "Traffic_ChromeTrim",
+            "Traffic_BrakeRotor",
+            "Traffic_Caliper"
+          ]
+        }
+      ],
+      "wheelRadius": 0.33,
+      "animatableParts": [
+        "Wheel_FL",
+        "Wheel_FR",
+        "Wheel_RL",
+        "Wheel_RR"
+      ]
+    },
+    "character_mara": {
+      "key": "character_mara",
+      "file": "character_mara.glb",
+      "url": "/assets/models/character_mara.glb",
+      "category": "character",
+      "description": "Photorealistic skeletal-rigged Mara Voss (ex-Securion security engineer) with animated glTF clips.",
+      "sizeBytes": 2577940,
+      "triangles": 16063,
+      "textures": 24,
+      "skinned": true,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Sneak",
+        "Run",
+        "Interact"
+      ],
+      "dimensions": {
+        "width": 0.653,
+        "height": 1.7232,
+        "depth": 0.3206
+      },
+      "bounds": {
+        "min": [
+          -0.326,
+          0.0,
+          -0.1666
+        ],
+        "max": [
+          0.327,
+          1.7232,
+          0.154
+        ]
+      },
+      "originOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "subMeshes": [
+        "Mara_Body"
+      ],
+      "nodes": [
+        {
+          "name": "Head",
+          "type": "SKIN_JOINT",
+          "parent": "Neck",
+          "worldPivot": [
+            0.0,
+            1.5,
+            -0.008
+          ],
+          "localOffset": [
+            0.0,
+            0.0804,
+            0.0
+          ]
+        },
+        {
+          "name": "Neck",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            -0.0,
+            1.42,
+            -0.016
+          ],
+          "localOffset": [
+            -0.0,
+            0.275,
+            0.0
+          ]
+        },
+        {
+          "name": "Hand_L",
+          "type": "SKIN_JOINT",
+          "parent": "LowerArm_L",
+          "worldPivot": [
+            0.292,
+            0.888,
+            0.022
+          ],
+          "localOffset": [
+            0.0,
+            0.2341,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerArm_L",
+          "type": "SKIN_JOINT",
+          "parent": "UpperArm_L",
+          "worldPivot": [
+            0.248,
+            1.112,
+            -0.03
+          ],
+          "localOffset": [
+            -0.0,
+            0.254,
+            -0.0
+          ]
+        },
+        {
+          "name": "UpperArm_L",
+          "type": "SKIN_JOINT",
+          "parent": "Shoulder_L",
+          "worldPivot": [
+            0.166,
+            1.352,
+            -0.016
+          ],
+          "localOffset": [
+            -0.0,
+            0.1273,
+            -0.0
+          ]
+        },
+        {
+          "name": "Shoulder_L",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            0.04,
+            1.37,
+            -0.015
+          ],
+          "localOffset": [
+            0.04,
+            0.225,
+            0.0003
+          ]
+        },
+        {
+          "name": "Hand_R",
+          "type": "SKIN_JOINT",
+          "parent": "LowerArm_R",
+          "worldPivot": [
+            -0.292,
+            0.888,
+            0.022
+          ],
+          "localOffset": [
+            -0.0,
+            0.2341,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerArm_R",
+          "type": "SKIN_JOINT",
+          "parent": "UpperArm_R",
+          "worldPivot": [
+            -0.248,
+            1.112,
+            -0.03
+          ],
+          "localOffset": [
+            -0.0,
+            0.254,
+            0.0
+          ]
+        },
+        {
+          "name": "UpperArm_R",
+          "type": "SKIN_JOINT",
+          "parent": "Shoulder_R",
+          "worldPivot": [
+            -0.166,
+            1.352,
+            -0.016
+          ],
+          "localOffset": [
+            -0.0,
+            0.1273,
+            -0.0
+          ]
+        },
+        {
+          "name": "Shoulder_R",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            -0.04,
+            1.37,
+            -0.015
+          ],
+          "localOffset": [
+            -0.04,
+            0.225,
+            0.0003
+          ]
+        },
+        {
+          "name": "Chest",
+          "type": "SKIN_JOINT",
+          "parent": "Spine",
+          "worldPivot": [
+            -0.0,
+            1.145,
+            -0.012
+          ],
+          "localOffset": [
+            -0.0,
+            0.1551,
+            0.0
+          ]
+        },
+        {
+          "name": "Spine",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            0.0,
+            0.99,
+            -0.008
+          ],
+          "localOffset": [
+            0.0,
+            0.095,
+            0.0
+          ]
+        },
+        {
+          "name": "Foot_L",
+          "type": "SKIN_JOINT",
+          "parent": "LowerLeg_L",
+          "worldPivot": [
+            0.088,
+            0.088,
+            -0.012
+          ],
+          "localOffset": [
+            0.0,
+            0.3804,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerLeg_L",
+          "type": "SKIN_JOINT",
+          "parent": "UpperLeg_L",
+          "worldPivot": [
+            0.089,
+            0.468,
+            0.006
+          ],
+          "localOffset": [
+            -0.0,
+            0.4102,
+            -0.0
+          ]
+        },
+        {
+          "name": "UpperLeg_L",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            0.09,
+            0.878,
+            -0.006
+          ],
+          "localOffset": [
+            0.09,
+            -0.017,
+            0.002
+          ]
+        },
+        {
+          "name": "Foot_R",
+          "type": "SKIN_JOINT",
+          "parent": "LowerLeg_R",
+          "worldPivot": [
+            -0.088,
+            0.088,
+            -0.012
+          ],
+          "localOffset": [
+            -0.0,
+            0.3804,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerLeg_R",
+          "type": "SKIN_JOINT",
+          "parent": "UpperLeg_R",
+          "worldPivot": [
+            -0.089,
+            0.468,
+            0.006
+          ],
+          "localOffset": [
+            0.0,
+            0.4102,
+            -0.0
+          ]
+        },
+        {
+          "name": "UpperLeg_R",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            -0.09,
+            0.878,
+            -0.006
+          ],
+          "localOffset": [
+            -0.09,
+            -0.017,
+            0.002
+          ]
+        },
+        {
+          "name": "Hips",
+          "type": "SKIN_JOINT",
+          "parent": "MaraRig",
+          "worldPivot": [
+            0.0,
+            0.895,
+            -0.008
+          ],
+          "localOffset": [
+            0.0,
+            0.895,
+            -0.008
+          ]
+        },
+        {
+          "name": "Mara_Body",
+          "type": "MESH",
+          "parent": "MaraRig",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 16063,
+          "materials": [
+            "Mara_Skin",
+            "Mara_Eye",
+            "Mara_Eyelash",
+            "Mara_CommEarpiece",
+            "Mara_BrushedGunmetal",
+            "Mara_Hair",
+            "Mara_Turtleneck",
+            "Mara_TechJacket",
+            "Mara_JacketTrim",
+            "Mara_LeatherBootsGloves",
+            "Mara_DiagnosticCyan",
+            "Mara_Trousers",
+            "Mara_BootRubber",
+            "Mara_SatchelLeather",
+            "Mara_BrushedBrass",
+            "Mara_SecurionPouch"
+          ]
+        },
+        {
+          "name": "MaraRig",
+          "type": "SKIN_JOINT",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    "character_jupp": {
+      "key": "character_jupp",
+      "file": "character_jupp.glb",
+      "url": "/assets/models/character_jupp.glb",
+      "category": "character",
+      "description": "Photorealistic skeletal-rigged Jupp Kowalke (68yo master safecracker in wool overcoat & flatcap) with animated glTF clips.",
+      "sizeBytes": 2239808,
+      "triangles": 12878,
+      "textures": 24,
+      "skinned": true,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Sneak",
+        "Work",
+        "CarryLoot",
+        "Panic"
+      ],
+      "dimensions": {
+        "width": 0.5848,
+        "height": 1.763,
+        "depth": 0.447
+      },
+      "bounds": {
+        "min": [
+          -0.3055,
+          0.0,
+          -0.233
+        ],
+        "max": [
+          0.2793,
+          1.763,
+          0.214
+        ]
+      },
+      "originOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "subMeshes": [
+        "Jupp_Body",
+        "ToolBag"
+      ],
+      "nodes": [
+        {
+          "name": "Jupp_Body",
+          "type": "MESH",
+          "parent": "Armature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 11878,
+          "materials": [
+            "Jupp_FaceSkin",
+            "Jupp_Eye",
+            "Jupp_SilverHair",
+            "Jupp_OvercoatWool",
+            "Jupp_FlatcapTrim",
+            "Jupp_DraftingPencil",
+            "Jupp_AgedBrass",
+            "Jupp_KnitSweater",
+            "Jupp_HornButton",
+            "Jupp_LeatherGloves",
+            "Jupp_WoolTrousers",
+            "Jupp_LeatherBoots",
+            "Jupp_BootSole",
+            "Jupp_DoctorBagLeather"
+          ]
+        },
+        {
+          "name": "ToolBag",
+          "type": "MESH",
+          "parent": "Armature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 1000,
+          "materials": [
+            "Jupp_DoctorBagLeather",
+            "Jupp_AgedBrass"
+          ]
+        }
+      ]
+    },
+    "character_crew": {
+      "key": "character_crew",
+      "file": "character_crew.glb",
+      "url": "/assets/models/character_crew.glb",
+      "category": "character",
+      "description": "Photorealistic skeletal-rigged tactical heist accomplice with gear backpack and animated glTF clips.",
+      "sizeBytes": 1696396,
+      "triangles": 13602,
+      "textures": 26,
+      "skinned": true,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Sneak",
+        "Work",
+        "CarryLoot",
+        "Panic"
+      ],
+      "dimensions": {
+        "width": 0.5329,
+        "height": 1.7744,
+        "depth": 0.6113
+      },
+      "bounds": {
+        "min": [
+          -0.2663,
+          0.0,
+          -0.3973
+        ],
+        "max": [
+          0.2666,
+          1.7744,
+          0.214
+        ]
+      },
+      "originOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "subMeshes": [
+        "Backpack",
+        "Crew_Body"
+      ],
+      "nodes": [
+        {
+          "name": "Backpack",
+          "type": "MESH",
+          "parent": "Armature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 2010,
+          "materials": [
+            "Crew_Backpack",
+            "Crew_PackStraps",
+            "Crew_HardwareMetal",
+            "Crew_MattePolymer"
+          ]
+        },
+        {
+          "name": "Crew_Body",
+          "type": "MESH",
+          "parent": "Armature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 11592,
+          "materials": [
+            "Crew_FaceSkin",
+            "Crew_Eye",
+            "Crew_Hair",
+            "Crew_MattePolymer",
+            "Crew_Headset_LED",
+            "Crew_Windbreaker",
+            "Crew_HoodieTrim_Accent",
+            "Crew_HardwareMetal",
+            "Crew_JacketPanels",
+            "Crew_TacticalGloves",
+            "Crew_CargoPants",
+            "Crew_TacticalBoots",
+            "Crew_BootSole"
+          ]
+        }
+      ]
+    },
+    "character_guard": {
+      "key": "character_guard",
+      "file": "character_guard.glb",
+      "url": "/assets/models/character_guard.glb",
+      "category": "character",
+      "description": "Photorealistic skeletal-rigged Catalan Securion night security guard with peaked cap, lapel radio, flashlight, and animated glTF clips.",
+      "sizeBytes": 1897320,
+      "triangles": 13746,
+      "textures": 21,
+      "skinned": true,
+      "animations": [
+        "Idle",
+        "PatrolWalk",
+        "SuspiciousLook",
+        "FlashlightSweep",
+        "RadioCall",
+        "Sprint"
+      ],
+      "dimensions": {
+        "width": 0.5899,
+        "height": 1.8,
+        "depth": 0.4751
+      },
+      "bounds": {
+        "min": [
+          -0.2934,
+          0.0,
+          -0.149
+        ],
+        "max": [
+          0.2965,
+          1.8,
+          0.3262
+        ]
+      },
+      "originOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "subMeshes": [
+        "Guard_Mesh"
+      ],
+      "nodes": [
+        {
+          "name": "Head",
+          "type": "SKIN_JOINT",
+          "parent": "Neck",
+          "worldPivot": [
+            0.0,
+            1.582,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0873,
+            0.0
+          ]
+        },
+        {
+          "name": "Neck",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            0.0,
+            1.4947,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.2209,
+            0.0
+          ]
+        },
+        {
+          "name": "Hand_L",
+          "type": "SKIN_JOINT",
+          "parent": "LowerArm_L",
+          "worldPivot": [
+            0.2486,
+            0.8886,
+            0.037
+          ],
+          "localOffset": [
+            0.0,
+            0.2714,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerArm_L",
+          "type": "SKIN_JOINT",
+          "parent": "UpperArm_L",
+          "worldPivot": [
+            0.2383,
+            1.1557,
+            -0.0103
+          ],
+          "localOffset": [
+            0.0,
+            0.2875,
+            -0.0
+          ]
+        },
+        {
+          "name": "UpperArm_L",
+          "type": "SKIN_JOINT",
+          "parent": "Shoulder_L",
+          "worldPivot": [
+            0.1972,
+            1.4403,
+            -0.0062
+          ],
+          "localOffset": [
+            0.0,
+            0.1216,
+            -0.0
+          ]
+        },
+        {
+          "name": "Shoulder_L",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            0.077,
+            1.4588,
+            -0.0062
+          ],
+          "localOffset": [
+            0.077,
+            0.1849,
+            -0.0062
+          ]
+        },
+        {
+          "name": "Flashlight",
+          "type": "SKIN_JOINT",
+          "parent": "Hand_R",
+          "worldPivot": [
+            -0.2589,
+            0.9225,
+            0.1777
+          ],
+          "localOffset": [
+            0.0247,
+            0.0699,
+            -0.0006
+          ]
+        },
+        {
+          "name": "Hand_R",
+          "type": "SKIN_JOINT",
+          "parent": "LowerArm_R",
+          "worldPivot": [
+            -0.2342,
+            0.9636,
+            0.1212
+          ],
+          "localOffset": [
+            0.0,
+            0.2377,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerArm_R",
+          "type": "SKIN_JOINT",
+          "parent": "UpperArm_R",
+          "worldPivot": [
+            -0.2363,
+            1.1588,
+            -0.0144
+          ],
+          "localOffset": [
+            0.0,
+            0.2843,
+            0.0
+          ]
+        },
+        {
+          "name": "UpperArm_R",
+          "type": "SKIN_JOINT",
+          "parent": "Shoulder_R",
+          "worldPivot": [
+            -0.1972,
+            1.4403,
+            -0.0062
+          ],
+          "localOffset": [
+            -0.0,
+            0.1216,
+            -0.0
+          ]
+        },
+        {
+          "name": "Shoulder_R",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            -0.077,
+            1.4588,
+            -0.0062
+          ],
+          "localOffset": [
+            -0.077,
+            0.1849,
+            -0.0062
+          ]
+        },
+        {
+          "name": "Chest",
+          "type": "SKIN_JOINT",
+          "parent": "Spine",
+          "worldPivot": [
+            0.0,
+            1.2738,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.1746,
+            0.0
+          ]
+        },
+        {
+          "name": "Spine",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            0.0,
+            1.0992,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.1284,
+            0.0
+          ]
+        },
+        {
+          "name": "Foot_L",
+          "type": "SKIN_JOINT",
+          "parent": "LowerLeg_L",
+          "worldPivot": [
+            0.0986,
+            0.0976,
+            -0.0123
+          ],
+          "localOffset": [
+            0.0,
+            0.4217,
+            -0.0
+          ]
+        },
+        {
+          "name": "LowerLeg_L",
+          "type": "SKIN_JOINT",
+          "parent": "UpperLeg_L",
+          "worldPivot": [
+            0.0945,
+            0.5188,
+            0.0082
+          ],
+          "localOffset": [
+            -0.0,
+            0.4521,
+            0.0
+          ]
+        },
+        {
+          "name": "UpperLeg_L",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            0.0986,
+            0.9708,
+            0.0
+          ],
+          "localOffset": [
+            0.0986,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "Foot_R",
+          "type": "SKIN_JOINT",
+          "parent": "LowerLeg_R",
+          "worldPivot": [
+            -0.0986,
+            0.0976,
+            -0.0123
+          ],
+          "localOffset": [
+            -0.0,
+            0.4217,
+            -0.0
+          ]
+        },
+        {
+          "name": "LowerLeg_R",
+          "type": "SKIN_JOINT",
+          "parent": "UpperLeg_R",
+          "worldPivot": [
+            -0.0945,
+            0.5188,
+            0.0082
+          ],
+          "localOffset": [
+            0.0,
+            0.4521,
+            0.0
+          ]
+        },
+        {
+          "name": "UpperLeg_R",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            -0.0986,
+            0.9708,
+            0.0
+          ],
+          "localOffset": [
+            -0.0986,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "Hips",
+          "type": "SKIN_JOINT",
+          "parent": "Root",
+          "worldPivot": [
+            0.0,
+            0.9708,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.9708,
+            0.0
+          ]
+        },
+        {
+          "name": "Root",
+          "type": "SKIN_JOINT",
+          "parent": "GuardArmature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "Guard_Mesh",
+          "type": "MESH",
+          "parent": "GuardArmature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 13746,
+          "materials": [
+            "Guard_UniformTrousers",
+            "Guard_LeatherBootsBelt",
+            "Guard_RubberSole",
+            "Guard_MetallicBadge",
+            "Guard_UniformShirt",
+            "Guard_EpauletteAccent",
+            "Guard_TacticalVest",
+            "Guard_CatalanTrim",
+            "Guard_BrassGold",
+            "Guard_RadioLED",
+            "Guard_SkinHands",
+            "Guard_FlashlightAluminum",
+            "Guard_FlashlightLens",
+            "Guard_FaceSkin",
+            "Guard_Eye",
+            "Guard_Hair",
+            "Guard_AcousticCoil",
+            "Guard_CapVisorPatent"
+          ]
+        },
+        {
+          "name": "GuardArmature",
+          "type": "SKIN_JOINT",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    "character_civilian": {
+      "key": "character_civilian",
+      "file": "character_civilian.glb",
+      "url": "/assets/models/character_civilian.glb",
+      "category": "character",
+      "description": "Photorealistic skeletal-rigged Salou evening promenade pedestrian/witness with animated glTF clips.",
+      "sizeBytes": 1593844,
+      "triangles": 10352,
+      "textures": 18,
+      "skinned": true,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Startled"
+      ],
+      "dimensions": {
+        "width": 0.5443,
+        "height": 1.75,
+        "depth": 0.3672
+      },
+      "bounds": {
+        "min": [
+          -0.2722,
+          0.0,
+          -0.1628
+        ],
+        "max": [
+          0.2722,
+          1.75,
+          0.2044
+        ]
+      },
+      "originOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "subMeshes": [
+        "Civilian_Mesh"
+      ],
+      "nodes": [
+        {
+          "name": "Head",
+          "type": "SKIN_JOINT",
+          "parent": "Neck",
+          "worldPivot": [
+            0.0,
+            1.5357,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0853,
+            0.0
+          ]
+        },
+        {
+          "name": "Neck",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            0.0,
+            1.4505,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.2178,
+            0.0
+          ]
+        },
+        {
+          "name": "Hand_L",
+          "type": "SKIN_JOINT",
+          "parent": "LowerArm_L",
+          "worldPivot": [
+            0.228,
+            0.8649,
+            0.0329
+          ],
+          "localOffset": [
+            -0.0,
+            0.2604,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerArm_L",
+          "type": "SKIN_JOINT",
+          "parent": "UpperArm_L",
+          "worldPivot": [
+            0.2198,
+            1.1217,
+            -0.0092
+          ],
+          "localOffset": [
+            0.0,
+            0.2798,
+            -0.0
+          ]
+        },
+        {
+          "name": "UpperArm_L",
+          "type": "SKIN_JOINT",
+          "parent": "Shoulder_L",
+          "worldPivot": [
+            0.1828,
+            1.3991,
+            -0.0051
+          ],
+          "localOffset": [
+            0.0,
+            0.1117,
+            0.0
+          ]
+        },
+        {
+          "name": "Shoulder_L",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            0.0719,
+            1.4125,
+            -0.0051
+          ],
+          "localOffset": [
+            0.0719,
+            0.1798,
+            -0.0051
+          ]
+        },
+        {
+          "name": "Hand_R",
+          "type": "SKIN_JOINT",
+          "parent": "LowerArm_R",
+          "worldPivot": [
+            -0.228,
+            0.8649,
+            0.0329
+          ],
+          "localOffset": [
+            0.0,
+            0.2604,
+            0.0
+          ]
+        },
+        {
+          "name": "LowerArm_R",
+          "type": "SKIN_JOINT",
+          "parent": "UpperArm_R",
+          "worldPivot": [
+            -0.2198,
+            1.1217,
+            -0.0092
+          ],
+          "localOffset": [
+            -0.0,
+            0.2798,
+            -0.0
+          ]
+        },
+        {
+          "name": "UpperArm_R",
+          "type": "SKIN_JOINT",
+          "parent": "Shoulder_R",
+          "worldPivot": [
+            -0.1828,
+            1.3991,
+            -0.0051
+          ],
+          "localOffset": [
+            -0.0,
+            0.1117,
+            0.0
+          ]
+        },
+        {
+          "name": "Shoulder_R",
+          "type": "SKIN_JOINT",
+          "parent": "Chest",
+          "worldPivot": [
+            -0.0719,
+            1.4125,
+            -0.0051
+          ],
+          "localOffset": [
+            -0.0719,
+            0.1798,
+            -0.0051
+          ]
+        },
+        {
+          "name": "Chest",
+          "type": "SKIN_JOINT",
+          "parent": "Spine",
+          "worldPivot": [
+            0.0,
+            1.2327,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.1746,
+            0.0
+          ]
+        },
+        {
+          "name": "Spine",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            0.0,
+            1.0581,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.1181,
+            0.0
+          ]
+        },
+        {
+          "name": "Foot_L",
+          "type": "SKIN_JOINT",
+          "parent": "LowerLeg_L",
+          "worldPivot": [
+            0.0925,
+            0.0904,
+            -0.0103
+          ],
+          "localOffset": [
+            -0.0,
+            0.4083,
+            -0.0
+          ]
+        },
+        {
+          "name": "LowerLeg_L",
+          "type": "SKIN_JOINT",
+          "parent": "UpperLeg_L",
+          "worldPivot": [
+            0.0883,
+            0.4982,
+            0.0082
+          ],
+          "localOffset": [
+            -0.0,
+            0.4418,
+            0.0
+          ]
+        },
+        {
+          "name": "UpperLeg_L",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            0.0925,
+            0.9399,
+            0.0
+          ],
+          "localOffset": [
+            0.0925,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "Foot_R",
+          "type": "SKIN_JOINT",
+          "parent": "LowerLeg_R",
+          "worldPivot": [
+            -0.0925,
+            0.0904,
+            -0.0103
+          ],
+          "localOffset": [
+            0.0,
+            0.4083,
+            -0.0
+          ]
+        },
+        {
+          "name": "LowerLeg_R",
+          "type": "SKIN_JOINT",
+          "parent": "UpperLeg_R",
+          "worldPivot": [
+            -0.0883,
+            0.4982,
+            0.0082
+          ],
+          "localOffset": [
+            0.0,
+            0.4418,
+            0.0
+          ]
+        },
+        {
+          "name": "UpperLeg_R",
+          "type": "SKIN_JOINT",
+          "parent": "Hips",
+          "worldPivot": [
+            -0.0925,
+            0.9399,
+            0.0
+          ],
+          "localOffset": [
+            -0.0925,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "Hips",
+          "type": "SKIN_JOINT",
+          "parent": "Root",
+          "worldPivot": [
+            0.0,
+            0.9399,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.9399,
+            0.0
+          ]
+        },
+        {
+          "name": "Root",
+          "type": "SKIN_JOINT",
+          "parent": "CivilianArmature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "Civilian_Mesh",
+          "type": "MESH",
+          "parent": "CivilianArmature",
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "triangles": 10352,
+          "materials": [
+            "Civ_ChinosSand",
+            "Civ_SkinHands",
+            "Civ_SuedeLoafers",
+            "Civ_LoaferSole",
+            "Civ_LeatherBelt",
+            "Civ_BrushedSteel",
+            "Civ_DarkShirt",
+            "Civ_LinenBlazer",
+            "Civ_HornButton",
+            "Civ_FaceSkin",
+            "Civ_Eye",
+            "Civ_Hair"
+          ]
+        },
+        {
+          "name": "CivilianArmature",
+          "type": "SKIN_JOINT",
+          "parent": null,
+          "worldPivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "localOffset": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
     }
   }
 }

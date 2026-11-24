@@ -1,11 +1,11 @@
 {
   "style_bible": {
-    "name": "Mediterranean Night Noir",
-    "core": "Stylized neo-noir editorial graphic-novel illustration, expressive painterly oil-and-ink brushwork reminiscent of Disco Elysium and classic European crime comics, crisp sculptural planes, subtle canvas paper grain, cinematic chiaroscuro lighting",
-    "palette": "deep midnight coastal indigo (#0b1528), slate shadow blue (#182842), warm sodium streetlamp amber (#f5a623), Catalan terracotta (#c4633e), crisp cyan blueprint rim accent (#38bdf8), muted crimson highlights",
-    "negative": "ABSOLUTELY NO TEXT, NO LETTERS, NO WORDS, NO NUMBERS, NO TYPOGRAPHY, NO SIGNAGE LETTERS, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES, NO UI ELEMENTS"
+    "name": "35mm Photorealistic Night Noir Cinema",
+    "core": "Ultra-photorealistic 35mm anamorphic cinema film still in the gritty nocturnal realism of Michael Mann's Heat and Collateral, captured on ARRI Alexa / Kodak Vision3 500T night stock, authentic optical depth of field, real physical textures, natural human skin pores and imperfections, true-to-life sodium-amber and coastal midnight-blue night street lighting",
+    "palette": "deep midnight coastal indigo shadows, realistic warm sodium-vapor amber streetlamps, cool cyan-teal nocturnal reflections on wet pavement, natural Mediterranean limestone and slate tones",
+    "negative": "NO PAINTERLY BRUSHSTROKES, NO ILLUSTRATION, NO COMIC ART, NO CGI PLASTIC SKIN, NO 3D RENDER LOOK, ABSOLUTELY NO TEXT, NO LETTERS, NO WORDS, NO NUMBERS, NO SIGNS WITH WRITING, NO LICENSE PLATE NUMBERS, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES"
   },
-  "assets": [
+  "cinema_images": [
     {
       "key": "title_salou_night",
       "category": "hero",
@@ -14,93 +14,9 @@
       "gen_size": "1536x1024",
       "quality": "high",
       "target_size": [1440, 810],
-      "webp_quality": 85,
-      "usage": "Title screen widescreen hero backdrop (16:9)",
-      "prompt": "Use case: stylized-concept\nAsset type: widescreen video game title screen key art backdrop\nScene/backdrop: Salou Mediterranean coastal promenade at midnight in Catalonia, wet rain-slick boulevard reflecting lights, rows of tall Mediterranean palm trees silhouetted against a deep midnight coastal sky and distant dark Balearic Sea horizon, warm modernist coastal hotels and terracotta townhouses along the left side glowing with abstract amber and cyan neon architectural light strips (pure geometric light tubes only, zero text or letters).\nSubject: In the lower-right foreground, a sleek low-slung dark European sport coupe getaway car parked in moody three-quarter rear-side silhouette along the wet curb, warm amber sodium streetlamp rays cutting through coastal sea mist, subtle red taillights reflecting on damp dark asphalt, a lone trench-coated figure faintly glimpsed near the palms watching the glowing hotel strip.\nStyle/medium: Stylized Mediterranean Night Noir editorial illustration, expressive painterly oil-and-ink brushwork like Disco Elysium meets European graphic novel crime art, atmospheric depth, rich canvas grain.\nComposition/framing: Cinematic wide 16:9 panoramic shot with generous dark atmospheric midnight sky and quiet negative space in the upper-left and center-left for game title typography overlay.\nLighting/mood: Moody neo-noir tension, warm sodium streetlamp amber pools contrasting against deep midnight indigo shadows and subtle cyan neon rim highlights.\nColor palette: Deep midnight blue, warm sodium amber gold, Catalan terracotta, cool cyan neon accents, wet charcoal tarmac.\nConstraints: Pure artwork only. Leave clean uncluttered dark sky space in upper-left for external title overlay.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO WORDS, NO SIGNS WITH WRITING, NO LICENSE PLATE NUMBERS, NO LOGOS, NO WATERMARKS, NO UI."
-    },
-    {
-      "key": "portrait_mara",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_mara.webp",
-      "url": "/assets/images/portrait_mara.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Mara Voss (player protagonist, ex-security engineer)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Mara Voss, a sharp 34-year-old German woman and former security systems engineer. Dark chestnut hair pulled back in a practical loose low bun with a few stray strands, intense focused hazel-grey eyes, subtle angular cheekbones, determined calm expression. Wearing a tailored dark charcoal technical field jacket with upturned collar over a dark navy turtleneck and a faint brass earpiece tucked in one ear.\nScene/backdrop: Abstract dark Mediterranean night noir background with moody slate-indigo painterly brush washes, faint bokeh glow of warm amber streetlamps and cool cyan blueprint reflection.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, visible sculptural palette-knife brushwork on face and jacket, cohesive fine ink edge contours.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with comfortable breathing room above the head, gaze directed slightly toward the viewer with quiet resolve.\nLighting/mood: Dramatic chiaroscuro split lighting — warm sodium-amber rim light along one cheekbone and collar, cool midnight-cyan architectural fill light on the shadow side.\nColor palette: Midnight indigo, slate charcoal, warm sodium amber gold, subtle cyan highlight, muted skin tones.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO NAMES, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "portrait_jupp",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_jupp.webp",
-      "url": "/assets/images/portrait_jupp.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Jupp Kowalke (68, old-school German safecracker mentor)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Jupp Kowalke, a weathered 68-year-old old-school German master safecracker and mentor. Deep laugh lines and seasoned wrinkles, silver-grey trimmed stubble, clever sly warm eyes beneath bushy grey brows, knowing half-smile of a veteran craftsman. Wearing a dark charcoal wool flatcap, a worn olive-brown trench coat with upturned lapels over a knit sweater, and a wooden drafting pencil tucked subtly behind his ear.\nScene/backdrop: Abstract dim Salou tavern night background with warm smoky amber painterly strokes and deep midnight indigo shadows.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, rich impasto brushwork and sculpted shadow planes matching a unified character cast.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with headroom, warm sharp gaze looking toward the viewer.\nLighting/mood: Warm low-key bar lamp golden amber key light from the side, deep coastal midnight-blue shadow fill.\nColor palette: Midnight navy, warm amber whiskey gold, worn tweed olive-brown, Catalan terracotta undertones, silver grey.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO NAMES, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "portrait_jule",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_jule.webp",
-      "url": "/assets/images/portrait_jule.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Jule (young electronics & alarm specialist)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Jule, a sharp 24-year-old European electronics and alarm-bypass specialist. Short tousled dark hair, calm analytical dark eyes, understated composed expression with faint curiosity. Wearing a matte dark petrol-blue zip hoodie under a cropped dark nylon utility vest, sleek compact studio headphones resting casually around the neck, subtle cool screen glow reflected on thin wire-frame glasses.\nScene/backdrop: Abstract dark Mediterranean night noir background with moody deep navy painterly brushwork and subtle electric cyan and warm amber bokeh accents.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, crisp angular brushwork and graphic ink accents matching a unified cast.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with comfortable headroom, poised cool gaze.\nLighting/mood: Cool cyan circuit-screen key light illuminating face and glasses from below-side, balanced with a warm sodium streetlamp amber rim light along the shoulder.\nColor palette: Deep midnight navy, electric cyan glow, matte petrol blue, warm amber rim highlight.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO SYMBOLS, NO CODE, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "portrait_toni",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_toni.webp",
-      "url": "/assets/images/portrait_toni.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Toni (charismatic Catalan getaway driver)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Toni, a charismatic 31-year-old Catalan getaway driver from the Costa Daurada. Olive Mediterranean complexion, swept-back wavy dark hair, short neat beard, confident roguish half-smile and sharp fearless eyes. Wearing a broken-in dark espresso-black cafe-racer leather jacket with collar open over a muted terracotta henley shirt, subtle leather driving gloves hinted at shoulder/collar edge.\nScene/backdrop: Abstract coastal night noir street background in deep indigo painterly brushwork with blurred warm amber headlight streaks and faint magenta-terracotta coastal neon glow.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, bold sculptural brush strokes and crisp dark ink shadows.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with headroom, relaxed confident angle.\nLighting/mood: Warm sodium streetlamp amber side-light catching the leather jacket sheen, deep midnight indigo shadow and crisp cyan rim light.\nColor palette: Midnight blue, dark leather espresso, Catalan terracotta, warm amber gold, faint neon coral accent.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO NAMES, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "portrait_rico",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_rico.webp",
-      "url": "/assets/images/portrait_rico.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Rico (agile climber & muscle)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Rico, a lean wiry 28-year-old agile rooftop climber and heist muscle. Weathered sun-tanned skin, strong jaw, slight scar across one eyebrow, cocky ambitious smirk and restless sharp eyes. Wearing a ribbed dark slate-black knit beanie, a rugged dark canvas utility jacket with climbing carabiner hardware clipped to a shoulder strap.\nScene/backdrop: Abstract dark night rooftop noir background with textured midnight-indigo brushstrokes, warm terracotta-amber city glow below and cool moonlight highlights.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, energetic faceted brushwork and bold graphic shadows.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with headroom, slight head tilt projecting bold ambition.\nLighting/mood: Moody chiaroscuro rooftop lighting, cool midnight-blue top rim light with warm sodium-amber under-glow from city streets below.\nColor palette: Deep slate blue, charcoal black, burnt terracotta, warm amber highlight, steel grey.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO NAMES, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "portrait_ferrer",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_ferrer.webp",
-      "url": "/assets/images/portrait_ferrer.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Inspectora Núria Ferrer (Catalan police detective, Die Akte antagonist)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Inspectora Núria Ferrer, a formidable 44-year-old Catalan police detective investigating the Salou burglaries. Sharp Mediterranean features, dark silver-streaked hair cut in a crisp shoulder-length bob, piercing stern eyes, unyielding observant expression, slight tension lines between her brows. Wearing a structured dark navy tailored blazer over a crisp pale steel-blue collared shirt, a subtle understated metal badge pin (unreadable abstract shape) on her lapel.\nScene/backdrop: Abstract late-night precinct office background with venetian-blind shadow slashes across deep midnight indigo walls and a warm desk-lamp case-file amber glow.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, sharp architectural brushwork and incisive ink linework.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with headroom, commanding steady gaze.\nLighting/mood: Classic neo-noir detective desk-lamp lighting — dramatic warm amber key light from below-left contrasting with cold blue-red patrol-light twilight shadows.\nColor palette: Deep police navy, slate shadow, warm case-file lamp amber, muted crimson accent, cool steel blue.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO NUMBERS, NO BADGE WRITING, NO LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "portrait_lassen",
-      "category": "portrait",
-      "out": "public/assets/images/portrait_lassen.webp",
-      "url": "/assets/images/portrait_lassen.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 85,
-      "usage": "Character portrait for Henrik Lassen (cold corporate Securion executive)",
-      "prompt": "Use case: illustration-story\nAsset type: square character portrait avatar for a crime heist RPG\nSubject: Henrik Lassen, a cold calculating 52-year-old German corporate executive of an international security conglomerate. Immaculately combed silver-blond hair, narrow icy blue eyes, sharp aristocratic features, faint detached contemptuous expression. Wearing an impeccably tailored charcoal-black double-breasted suit, crisp white shirt, dark silk tie, and minimalist rimless spectacles catching a cold glint of light.\nScene/backdrop: Abstract nocturnal glass corporate high-rise interior in deep midnight-blue shadows with cold architectural cyan glass reflections and distant amber city pinpoints.\nStyle/medium: Expressive painterly oil-and-ink editorial character portrait in the style of Disco Elysium and stylized European neo-noir graphic novels, razor-sharp geometric shadow planes and refined brushwork.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with headroom, slightly elevated chin looking down coolly.\nLighting/mood: Cold predatory executive chiaroscuro — stark pale cyan-silver rim light along glasses and jaw, half the face falling into deep midnight slate shadow.\nColor palette: Obsidian charcoal, icy steel cyan, deep midnight blue, faint distant gold amber, alabaster highlights.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO COMPANY LOGOS, NO WATERMARKS, NO BORDERS, NO FRAMES."
+      "webp_quality": 86,
+      "usage": "Title screen widescreen photorealistic 35mm film-still hero backdrop (16:9)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: widescreen 35mm cinema film still hero backdrop for a realistic crime thriller video game\nScene/backdrop: Real photographic night view of the Salou Mediterranean coastal promenade in Catalonia right after midnight rainfall. Wet rain-slick dark asphalt boulevard glistening with realistic elongated amber sodium-vapor streetlamp reflections and subtle cool cyan architectural LED strip reflections from modern coastal hotels on the left (pure unlabelled geometric architectural lighting only, zero signage text). Tall real Mediterranean palm trees along the seafront promenade, dark Balearic Sea waves dimly visible on the far right beneath an overcast midnight sky.\nSubject: Parked along the wet curb in the lower-right foreground, a sleek dark metallic gunmetal European sports coupe getaway car seen from a moody rear three-quarter angle, raindrops beading on curved clearcoat bodywork, glowing crimson LED taillights reflecting on wet tarmac, dark tinted windows. A silhouetted woman in a dark technical rain jacket stands quietly near a palm trunk looking down the wet boulevard.\nStyle/medium: Ultra-photorealistic live-action 35mm anamorphic cinema film still (Michael Mann Heat / Collateral aesthetic), shot on 40mm anamorphic lens f/2.0, authentic optical bokeh, fine Kodak Vision3 500T night film grain, raw photographic realism — NOT a painting or illustration.\nComposition/framing: Cinematic wide 16:9 composition with expansive dark atmospheric midnight sky in the upper-left and center-left leaving clean negative space for title typography overlay.\nLighting/mood: Gritty neo-noir coastal thriller tension, realistic warm sodium-amber pools cutting through damp sea air against deep indigo-black night shadows.\nAvoid: NO PAINTERLY STYLE, NO ILLUSTRATION, ABSOLUTELY NO TEXT, NO LETTERS, NO WORDS, NO HOTEL SIGNS WITH WRITING, NO LICENSE PLATE LETTERS OR NUMBERS, NO LOGOS, NO WATERMARKS, NO BORDERS."
     },
     {
       "key": "story_bar_salou",
@@ -108,11 +24,11 @@
       "out": "public/assets/images/story_bar_salou.webp",
       "url": "/assets/images/story_bar_salou.webp",
       "gen_size": "1536x1024",
-      "quality": "medium",
+      "quality": "high",
       "target_size": [1280, 720],
-      "webp_quality": 85,
-      "usage": "Act 1 story briefing panel: dim Salou bar with blueprints on wax tracing paper",
-      "prompt": "Use case: illustration-story\nAsset type: widescreen 16:9 story cutscene illustration for a crime heist game\nScene/backdrop: Inside a dimly lit late-night Catalan corner bar in Salou. Dark weathered timber counter, amber bottles glowing softly along the back shelves, ceramic terracotta tiles on the lower wall, rain-beaded window in the back looking out onto a midnight-blue street with palm fronds and warm sodium streetlamps.\nSubject: At a corner wooden booth table beneath a low hanging warm brass pendant lamp, two silhouetted figures lean closely over spread-out translucent wax tracing paper (butterbrotpapier) covered with hand-drawn pencil architectural floorplan lines and red grease-pencil route arrows (pure geometric room outlines and arrows ONLY, zero text or numbers). A 34-year-old woman in a dark field jacket points a brass ruler at a floorplan corner while a 68-year-old man in a flatcap and trench coat holds a wooden pencil beside two half-empty espresso glasses and a vintage mechanical stopwatch.\nStyle/medium: Stylized Mediterranean Night Noir editorial illustration, expressive painterly oil-and-ink brushwork like Disco Elysium meets classic European crime graphic novels, atmospheric smoke haze and rich shadows.\nComposition/framing: Cinematic widescreen 16:9 over-the-table mid-wide angle, warm pool of amber pendant light anchoring the floorplan in the center-foreground, deep midnight blue corners.\nLighting/mood: Intimate conspiratorial neo-noir warmth against dark Mediterranean coastal midnight outside.\nColor palette: Deep midnight indigo, rich mahogany shadow, glowing tungsten amber, translucent cream parchment, Catalan terracotta, subtle cyan window glow.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO WORDS, NO NUMBERS ON BLUEPRINTS OR BOTTLES OR SIGNS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+      "webp_quality": 86,
+      "usage": "Act 1 photorealistic 35mm story still: dim Salou bar briefing over blueprints on wax tracing paper",
+      "prompt": "Use case: photorealistic-natural\nAsset type: widescreen 16:9 live-action 35mm cinema film still for a crime thriller story scene\nScene/backdrop: Inside an authentic dimly lit late-night Spanish neighborhood bar in Salou. Scuffed dark varnished wood booth table, aged Catalan ceramic tiles along the side wall, out-of-focus dark amber glass liquor bottles on wooden shelves in the background, rain-beaded storefront glass window revealing wet midnight palm-lined street outside with soft sodium streetlamp bokeh.\nSubject: Beneath a low hanging tarnished brass pendant lamp, two real people lean closely over semi-translucent crinkled wax tracing paper (butterbrotpapier) covered in neat hand-drawn graphite pencil architectural floorplan rectangles and red grease-pencil directional route arrows (pure clean geometric lines and arrows ONLY, zero written words or numbers). On the left, a sharp 34-year-old German woman with dark chestnut hair in a loose low bun and a matte charcoal technical jacket rests a brass straightedge ruler on the floorplan. Across from her on the right, a weathered 68-year-old German man with silver stubble, tweed flatcap, and worn olive-charcoal trench coat holds a wooden pencil beside two half-finished espresso glasses and a steel mechanical stopwatch.\nStyle/medium: Ultra-photorealistic live-action 35mm anamorphic cinema film still (Michael Mann Heat / European prestige crime cinema), shot on 35mm lens f/2.0, authentic natural skin texture, real fabric weave, subtle haze, fine Kodak 500T night film grain — strictly live-action photography, NOT painted.\nComposition/framing: Cinematic 16:9 medium-wide over-the-table two-shot, warm tungsten pool illuminating the tracing paper floorplan in lower center, moody midnight-blue shadows in corners.\nAvoid: NO PAINTING, NO ILLUSTRATION, ABSOLUTELY NO TEXT, NO LETTERS, NO NUMBERS ON FLOORPLANS OR BOTTLE LABELS OR WINDOWS, NO LOGOS, NO WATERMARKS, NO BORDERS."
     },
     {
       "key": "story_dresden_vault",
@@ -120,65 +36,252 @@
       "out": "public/assets/images/story_dresden_vault.webp",
       "url": "/assets/images/story_dresden_vault.webp",
       "gen_size": "1536x1024",
-      "quality": "medium",
+      "quality": "high",
       "target_size": [1280, 720],
-      "webp_quality": 85,
-      "usage": "Act 3 finale story panel: baroque Dresden night silhouette and illuminated fictional royal treasure vault",
-      "prompt": "Use case: illustration-story\nAsset type: widescreen 16:9 finale cutscene illustration for a crime heist game\nScene/backdrop: A dramatic split-depth architectural night scene of historic baroque Dresden and a grand fictional royal treasure chamber. Through tall arched baroque sandstone windows, the nocturnal silhouette of baroque domes, spires, and the dark Elbe river mist glows faintly under a midnight sapphire sky. Inside the vaulted chamber: ornate gilded baroque sandstone columns, checkerboard marble floors, and sleek modern museum security glass vitrines bathed in dramatic spotlights.\nSubject: Inside the hushed illuminated baroque treasure hall, gleaming royal jewels, emerald-and-gold ceremonial regalia, and antique gilded artifacts rest inside fortified glass display cases crisscrossed by faint delicate cyan security laser beams and subtle amber architectural uplighting. In the shadowy foreground archway, the faint silhouette of a heist specialist crouches beside a glowing security junction box.\nStyle/medium: Stylized Night Noir editorial illustration, expressive painterly oil-and-ink brushwork like Disco Elysium meets classic European crime graphic novels, monumental architectural drama and refined lighting.\nComposition/framing: Sweeping widescreen 16:9 interior-to-exterior perspective drawing the eye down the vaulted hall toward the glowing central jewel vitrine and arched baroque night windows.\nLighting/mood: Tense high-stakes heist finale — cold midnight blue and razor-thin cyan security laser lines slicing across warm baroque gold and sandstone shadows.\nColor palette: Deep Prussian midnight blue, aged baroque sandstone ochre, radiant museum gold, crisp security laser cyan, deep obsidian shadow.\nAvoid: ABSOLUTELY NO TEXT, NO LETTERS, NO PLAQUES WITH WRITING, NO LOGOS, NO WATERMARKS, NO BORDERS, NO REAL BRANDS."
+      "webp_quality": 86,
+      "usage": "Act 3 finale photorealistic 35mm story still: historic baroque Dresden night view and illuminated fictional treasure vault",
+      "prompt": "Use case: photorealistic-natural\nAsset type: widescreen 16:9 live-action 35mm cinema film still for a high-stakes heist finale\nScene/backdrop: Inside a grand historic European baroque museum treasure hall in Dresden at 2:00 AM. Tall arched baroque Elbsandstein sandstone windows along the right side look out over the nocturnal misty Elbe river and the floodlit baroque sandstone domes and spires of Dresden's historic skyline under a deep Prussian midnight sky. Inside: fluted weathered sandstone columns with aged gilded baroque trim, gleaming dark-and-cream checkerboard polished marble floor reflecting the lights, and fortified modern museum-grade low-iron glass display vitrines.\nSubject: In the center of the quiet vault hall, a heavily reinforced museum glass display case softly illuminated from overhead holds ceremonial antique gold-and-emerald royal regalia, a jewelled crown, and gilded goblets on dark velvet. Faint razor-thin cyan-blue optical security laser beams crisscross the marble gallery between brushed steel floor stanchions. In the shadowy left foreground behind a sandstone archway, a gloved heist specialist in a dark matte jacket crouches closely beside an opened industrial steel security junction box, inspecting glowing wiring with insulated pliers.\nStyle/medium: Ultra-photorealistic live-action 35mm anamorphic cinema film still (Michael Mann Heat / prestige European heist cinema), shot on 32mm anamorphic lens, authentic museum glass reflections, realistic stone micro-texture, subtle atmospheric dust in spotlights, fine 35mm Kodak 500T grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Sweeping cinematic 16:9 architectural depth shot leading from the shadowy foreground technician toward the glowing jewel vitrine and Dresden night skyline.\nAvoid: NO PAINTING, NO ILLUSTRATION, ABSOLUTELY NO TEXT, NO MUSEUM PLAQUES WITH WRITING, NO LETTERS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_mara",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_mara.webp",
+      "url": "/assets/images/portrait_mara.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Mara Voss (34, German ex-security engineer)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Mara Voss, a sharp 34-year-old German woman and former security systems engineer. Dark chestnut hair pulled back in a practical loose low bun with natural stray wisps, focused intelligent hazel-grey eyes, natural unretouched skin texture with subtle pores and faint freckles, calm determined expression. Wearing a matte dark charcoal technical field jacket with upturned collar over a dark navy fine-knit turtleneck and a subtle matte-black acoustic comm earpiece tucked in one ear.\nScene/backdrop: Out-of-focus nocturnal Mediterranean street in Salou at midnight, rich anamorphic bokeh of distant warm sodium-amber streetlamps and cool cyan-blue coastal night shadows.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Heat / Collateral aesthetic), shot on 85mm f/1.8 anamorphic prime lens, real optical shallow depth of field, natural skin highlights, fine Kodak Vision3 500T film grain — strictly real-world photography, NOT painted, NOT 3D CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, steady composed gaze toward camera.\nLighting/mood: Natural cinematic night split lighting — warm sodium streetlamp key light along one cheekbone and collar, cool midnight-blue ambient fill on the shadow side.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO AIRBRUSHED CGI SKIN, ABSOLUTELY NO TEXT, NO LETTERS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_jupp",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_jupp.webp",
+      "url": "/assets/images/portrait_jupp.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Jupp Kowalke (68, veteran German safecracker)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Jupp Kowalke, a weathered 68-year-old old-school German master safecracker. Deep authentic laugh lines and weathered skin pores, trimmed salt-and-pepper beard stubble, clever warm knowing eyes under thick grey eyebrows, subtle wry half-smile of a veteran craftsman. Wearing a dark charcoal herringbone wool flatcap, a worn olive-brown cotton trench coat with upturned collar over a chunky dark knit sweater, and an ordinary sharpened wooden pencil tucked behind his ear.\nScene/backdrop: Out-of-focus dim late-night Mediterranean bar interior with warm tungsten lamp bokeh and deep midnight blue window shadows.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Heat / prestige European crime film), shot on 85mm f/1.8 prime lens, real skin wrinkles and woven wool texture, authentic shallow depth of field, fine Kodak Vision3 500T night film grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, warm sharp gaze.\nLighting/mood: Warm low-key amber pendant lamp side-lighting contrasting against deep cool nocturnal shadow fill.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO CGI, ABSOLUTELY NO TEXT, NO LETTERS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_jule",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_jule.webp",
+      "url": "/assets/images/portrait_jule.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Jule (24, electronics & alarm specialist)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Jule, a sharp 24-year-old European electronics and alarm-bypass specialist. Short messy dark brown hair, calm observant dark eyes, understated analytical expression, natural unretouched youthful skin with light pores and slight dark under-eye fatigue from late nights. Wearing thin matte-metal round eyeglasses catching a faint cool cyan monitor reflection, a dark petrol-blue cotton zip hoodie under a matte black technical utility vest, and compact studio headphones resting around the neck.\nScene/backdrop: Out-of-focus dim night coastal workshop / waterfront street in deep midnight navy with soft cool cyan and warm sodium-amber bokeh.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Heat / Collateral aesthetic), shot on 85mm f/1.8 lens, authentic lens reflection on glasses, realistic fabric stitching, fine Kodak Vision3 500T film grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, poised cool gaze.\nLighting/mood: Subtle cool cyan screen key-light from lower side balanced by warm sodium-amber streetlamp rim light along the shoulder and hair.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO CGI, ABSOLUTELY NO TEXT, NO LETTERS, NO CODE SYMBOLS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_toni",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_toni.webp",
+      "url": "/assets/images/portrait_toni.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Toni (31, Catalan getaway driver)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Toni, a charismatic 31-year-old Catalan getaway driver from the Costa Daurada. Sun-tanned Mediterranean olive complexion with authentic natural skin pores and fine stubble beard, swept-back wavy dark hair, confident fearless dark eyes and a slight roguish half-smile. Wearing a creased worn dark espresso-black cafe-racer leather jacket with metal zipper and snapped collar open over a faded terracotta-rust cotton henley shirt.\nScene/backdrop: Out-of-focus nocturnal Salou palm boulevard with wet asphalt reflections, warm anamorphic car headlight streaks and distant coastal streetlamp bokeh.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Collateral / Drive night cinema aesthetic), shot on 85mm f/1.8 anamorphic lens, genuine full-grain leather sheen and real facial texture, fine Kodak Vision3 500T film grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, confident relaxed angle.\nLighting/mood: Warm sodium-amber streetlamp side-light illuminating face and leather collar, cool midnight-blue shadow fill.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO CGI, ABSOLUTELY NO TEXT, NO LETTERS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_rico",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_rico.webp",
+      "url": "/assets/images/portrait_rico.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Rico (28, agile climber & heist muscle)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Rico, a lean wiry 28-year-old agile rooftop climber and heist specialist. Weathered sun-tanned skin with natural pores and light stubble, strong angular jaw, small healed scar across one eyebrow, restless sharp eyes and a cocky ambitious half-smirk. Wearing a ribbed dark charcoal knit watch-cap beanie, a rugged dark waxed-canvas utility jacket with upturned collar and a matte aluminum climbing carabiner and braided dark climbing rope slung over one shoulder strap.\nScene/backdrop: Out-of-focus nocturnal Mediterranean city rooftops in deep midnight blue with faint distant warm orange city glow bokeh.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Heat aesthetic), shot on 85mm f/1.8 lens, authentic knit wool texture, scuffed metal hardware, real human skin, fine Kodak Vision3 500T night film grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, bold slightly tilted chin.\nLighting/mood: Moody nocturnal rooftop lighting — cool moonlight blue rim light from above with warm distant streetlamp amber under-glow.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO CGI, ABSOLUTELY NO TEXT, NO LETTERS, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_ferrer",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_ferrer.webp",
+      "url": "/assets/images/portrait_ferrer.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Inspectora Núria Ferrer (44, Catalan police detective)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Inspectora Núria Ferrer, a formidable 44-year-old Catalan police homicide and burglary detective. Sharp Mediterranean features, dark brown hair streaked naturally with silver cut in a crisp shoulder-length bob, piercing stern dark eyes, slight tension crease between her eyebrows, unyielding composed expression, natural mature skin texture with realistic pores. Wearing a structured tailored dark navy wool blazer over a crisp pale slate-blue cotton button-down shirt, subtle small plain brushed-silver shield lapel pin (completely blank, zero engraving).\nScene/backdrop: Out-of-focus late-night police precinct office with venetian blind shadows across dark blue glass, warm amber desk lamp bokeh and a faint out-of-focus red-blue patrol strobe reflection on the far window.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Heat / European prestige crime drama), shot on 85mm f/1.8 prime lens, real wool tailoring and natural skin lighting, fine Kodak Vision3 500T night film grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, commanding steady gaze.\nLighting/mood: Classic nocturnal detective desk-lamp chiaroscuro — warm amber desk-lamp light from lower-left contrasting with cool blue precinct shadows.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO CGI, ABSOLUTELY NO TEXT, NO LETTERS, NO NUMBERS, NO BADGE WRITING, NO LOGOS, NO WATERMARKS, NO BORDERS."
+    },
+    {
+      "key": "portrait_lassen",
+      "category": "portrait",
+      "out": "public/assets/images/portrait_lassen.webp",
+      "url": "/assets/images/portrait_lassen.webp",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": [512, 512],
+      "webp_quality": 86,
+      "usage": "Photorealistic 35mm film-still portrait of Henrik Lassen (52, Securion corporate executive)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: square 35mm cinema character portrait photograph for a realistic crime thriller game\nSubject: Candid live-action film portrait of Henrik Lassen, a cold calculating 52-year-old German corporate executive of a European security conglomerate. Immaculately styled silver-blond hair, narrow icy blue eyes, sharp refined features, natural mature skin texture with slight lines around eyes, detached coolly superior expression. Wearing an impeccably tailored charcoal-black wool double-breasted suit, crisp white dress shirt, dark midnight silk tie, neat white pocket square, and minimalist titanium rimless eyeglasses catching a cold light reflection.\nScene/backdrop: Out-of-focus nocturnal corporate glass penthouse office in deep midnight blue shadows with distant warm golden city skyline bokeh visible through floor-to-ceiling tinted glass.\nStyle/medium: Ultra-photorealistic 35mm cinema still photograph (Michael Mann Heat / Succession prestige thriller cinematography), shot on 85mm f/1.8 lens, authentic lens reflection on rimless glass, crisp wool suiting weave, fine Kodak Vision3 500T night film grain — strictly live-action photography, NOT painted or CGI.\nComposition/framing: Head-and-shoulders three-quarter portrait, centered cleanly with natural headroom, slightly elevated chin looking coolly toward camera.\nLighting/mood: Cold predatory executive night chiaroscuro — cool cyan-silver architectural rim light across glasses and jawline, half the face receding into deep slate shadow.\nAvoid: NO PAINTING, NO ILLUSTRATION, NO CGI, ABSOLUTELY NO TEXT, NO LETTERS, NO COMPANY LOGOS, NO WATERMARKS, NO BORDERS."
+    }
+  ],
+  "pbr_materials": [
+    {
+      "key": "wet_asphalt",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": 1024,
+      "seamless_blend": true,
+      "legacy_out": "public/assets/textures/wet_asphalt.webp",
+      "usage": "Photorealistic seamless PBR wet coastal night asphalt road surface with rain puddle roughness mask",
+      "materialHint": { "roughness": 1.0, "metalness": 0.0, "normalScale": 0.9, "envMapIntensity": 1.35 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic top-down close-up photograph of real weathered dark city asphalt tarmac road surface after light rain. Fine dark crushed-basalt mineral aggregate stones, subtle bitumen binder variations, tiny hairline weathering micro-cracks, faint damp patches, rich photographic surface realism.\nStyle/medium: Real-world photogrammetry material scan photograph, ultra-crisp focus across the entire plane, zero artistic stylization.\nComposition/framing: Strictly perpendicular 90-degree top-down flat surface filling 100% of the square frame edge-to-edge, uniform aggregate scale everywhere so it tiles seamlessly.\nLighting/mood: Perfectly flat, even overcast diffuse neutral illumination with ZERO directional shadows, ZERO specular glare, ZERO streetlight reflections, ZERO vignette, ZERO brightness gradient.\nColor palette: Deep neutral charcoal grey-black tarmac, subtle cool slate mineral flecks.\nAvoid: ABSOLUTELY NO ROAD LINES, NO PAINT MARKINGS, NO MANHOLES, NO LEAVES, NO TRASH, NO PERSPECTIVE, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO TEXT, NO BORDERS."
     },
     {
       "key": "salou_stucco",
-      "category": "texture",
-      "out": "public/assets/textures/salou_stucco.webp",
-      "url": "/assets/textures/salou_stucco.webp",
       "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 84,
-      "seamless": true,
+      "quality": "high",
+      "target_size": 1024,
       "seamless_blend": true,
-      "usage": "Seamless tileable 3D surface texture for Salou Mediterranean stucco building walls",
-      "prompt": "Use case: stylized-concept\nAsset type: seamless tileable 3D game surface albedo texture map\nSubject: Flat orthographic top-down close-up of weathered Mediterranean Catalan stucco plaster wall, muted warm cream-terracotta ochre plaster with subtle trowel plaster texture, gentle coastal salt patina, tiny hairline plaster cracks, and tasteful painterly stylized brush variation.\nStyle/medium: Stylized painterly PBR game albedo texture matching a Mediterranean Night Noir stylized 3D world, rich surface tactility without harsh noise.\nComposition/framing: Strictly flat straight-on orthographic wall texture filling 100% of the square frame edge-to-edge, seamlessly tileable with uniform scale and continuous pattern across all four edges.\nLighting/mood: Perfectly flat, even diffuse neutral lighting with zero directional shadows, zero gradients, zero vignette, zero hot spots so it tiles cleanly in 3D.\nColor palette: Muted warm sand plaster, desaturated Catalan terracotta ochre, soft weathered cream, subtle warm grey mineral flecks.\nAvoid: ABSOLUTELY NO TEXT, NO WINDOWS, NO DOORS, NO PERSPECTIVE, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO BORDERS, NO FRAMES."
-    },
-    {
-      "key": "wet_asphalt",
-      "category": "texture",
-      "out": "public/assets/textures/wet_asphalt.webp",
-      "url": "/assets/textures/wet_asphalt.webp",
-      "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 84,
-      "seamless": true,
-      "seamless_blend": true,
-      "usage": "Seamless tileable 3D surface texture for Salou wet night asphalt roads",
-      "prompt": "Use case: stylized-concept\nAsset type: seamless tileable 3D game surface albedo texture map\nSubject: Flat orthographic top-down close-up of rain-damp nocturnal coastal city asphalt road surface, dark slate-charcoal coarse tarmac aggregate with subtle damp glossy patches, faint hairline asphalt seams, and fine mineral speckle in a cohesive stylized painterly game finish.\nStyle/medium: Stylized painterly PBR game albedo texture matching a Mediterranean Night Noir 3D driving and stealth game.\nComposition/framing: Strictly flat straight-on top-down road surface filling 100% of the square frame edge-to-edge, seamlessly tileable across left/right and top/bottom edges with uniform feature density.\nLighting/mood: Perfectly flat, even diffuse low-key lighting with zero directional shadows, zero lamp reflections, zero vignette, zero gradient so it tiles invisibly across streets.\nColor palette: Deep charcoal slate, muted midnight blue-grey damp patches, fine cool stone aggregate flecks.\nAvoid: ABSOLUTELY NO ROAD MARKINGS, NO WHITE LINES, NO MANHOLES, NO LEAVES, NO TEXT, NO PERSPECTIVE, NO VIGNETTE, NO BORDERS."
+      "legacy_out": "public/assets/textures/salou_stucco.webp",
+      "usage": "Photorealistic seamless PBR weathered Catalan Mediterranean limestone stucco plaster wall",
+      "materialHint": { "roughness": 1.0, "metalness": 0.0, "normalScale": 0.85, "envMapIntensity": 0.6 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic straight-on close-up photograph of a real weathered Catalan Mediterranean exterior lime-stucco plaster building wall from coastal Spain. Warm muted cream-sandstone and soft bleached terracotta-ochre mineral render, fine sand-grain plaster relief, authentic subtle hairline age cracks, delicate coastal salt-air weathering patches, natural imperfect mineral mottling.\nStyle/medium: Real-world photogrammetry architectural material scan photograph, razor-sharp focus edge-to-edge, zero painterly stylization.\nComposition/framing: Strictly flat perpendicular wall photograph filling 100% of the square frame edge-to-edge with even micro-detail density for seamless tiling.\nLighting/mood: Perfectly flat, even overcast diffuse illumination with ZERO directional cast shadows, ZERO vignette, ZERO bright spots or gradients.\nColor palette: Weathered warm limestone cream, muted Catalan sand-ochre, subtle pale mineral grey weathering.\nAvoid: ABSOLUTELY NO WINDOWS, NO DOORS, NO PIPES, NO GRAFFITI, NO TEXT, NO PERSPECTIVE, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO BORDERS."
     },
     {
       "key": "stone_plaza",
-      "category": "texture",
-      "out": "public/assets/textures/stone_plaza.webp",
-      "url": "/assets/textures/stone_plaza.webp",
       "gen_size": "1024x1024",
-      "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 84,
-      "seamless": true,
-      "usage": "Seamless tileable 3D surface texture for Mediterranean promenade and plaza stone paving",
-      "prompt": "Use case: stylized-concept\nAsset type: seamless tileable 3D game surface albedo texture map\nSubject: Flat orthographic top-down close-up of Mediterranean coastal promenade stone paving tiles in a regular grid of weathered limestone and muted warm terracotta-sandstone slabs with crisp narrow dark mortar grooves, subtle coastal wear, and tasteful painterly stone grain.\nStyle/medium: Stylized painterly PBR game albedo texture matching a Mediterranean Night Noir stylized 3D world.\nComposition/framing: Strictly flat straight-on top-down orthographic paving grid filling 100% of the square frame edge-to-edge, evenly aligned rows and columns so all four borders tile seamlessly.\nLighting/mood: Perfectly flat, even diffuse neutral lighting with zero directional cast shadows, zero vignette, zero gradient.\nColor palette: Muted cool limestone grey, warm weathered sandstone taupe, faint terracotta stone tint, dark slate mortar joints.\nAvoid: ABSOLUTELY NO TEXT, NO PERSPECTIVE, NO LEAVES OR TRASH, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO BORDERS, NO FRAMES."
+      "quality": "high",
+      "target_size": 1024,
+      "seamless_blend": false,
+      "legacy_out": "public/assets/textures/stone_plaza.webp",
+      "usage": "Photorealistic seamless PBR Catalan coastal promenade travertine and damp cobblestone paving",
+      "materialHint": { "roughness": 1.0, "metalness": 0.0, "normalScale": 1.0, "envMapIntensity": 1.0 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic top-down close-up photograph of authentic Mediterranean coastal promenade paving made of precision-laid rectangular weathered Catalan travertine limestone and muted pale sandstone paving blocks arranged in a clean uniform grid with crisp dark recessed sand-mortar joints, subtle mineral pores, gentle coastal foot-traffic polish, and natural slight tonal variation from stone to stone.\nStyle/medium: Real-world architectural photogrammetry scan photograph, crisp focus edge-to-edge, authentic stone mineral pores and weathered chamfered edges.\nComposition/framing: Strictly perpendicular 90-degree top-down paving grid filling 100% of the square frame edge-to-edge, evenly aligned horizontal rows and vertical joints cleanly matching opposing edges so it tiles seamlessly.\nLighting/mood: Perfectly flat, even overcast diffuse neutral illumination with ZERO directional shadows, ZERO glare, ZERO vignette, ZERO gradient.\nColor palette: Muted weathered coastal limestone grey, warm travertine beige-taupe, subtle faded sandstone ochre, dark charcoal mortar seams.\nAvoid: ABSOLUTELY NO LEAVES, NO TRASH, NO DRAINS, NO TEXT, NO PERSPECTIVE, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO BORDERS."
     },
     {
-      "key": "blueprint_paper",
-      "category": "texture",
-      "out": "public/assets/textures/blueprint_paper.webp",
-      "url": "/assets/textures/blueprint_paper.webp",
+      "key": "dresden_sandstone",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": 1024,
+      "seamless_blend": false,
+      "usage": "Photorealistic seamless PBR baroque Dresden Elbsandstein carved ashlar sandstone masonry with dark age patina",
+      "materialHint": { "roughness": 1.0, "metalness": 0.0, "normalScale": 1.15, "envMapIntensity": 0.65 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic straight-on close-up photograph of historic baroque Dresden Elbsandstein (Elbe sandstone) cut ashlar masonry wall blocks. Real rectangular dressed sandstone courses with recessed dark lime mortar joints, authentic fine chiseled stone toolmarks, warm honey-ochre sandstone naturally darkened in streaks and edges with centuries-old grey-black historic weathering patina characteristic of baroque Dresden architecture.\nStyle/medium: Real-world architectural photogrammetry scan photograph, razor-sharp sedimentary stone grain and chisel detail edge-to-edge.\nComposition/framing: Strictly perpendicular straight-on masonry wall filling 100% of the square frame edge-to-edge with evenly spaced horizontal running-bond courses aligned cleanly for seamless tiling.\nLighting/mood: Perfectly flat, even overcast diffuse neutral illumination with ZERO directional shadows, ZERO vignette, ZERO uneven gradient.\nColor palette: Aged Elbsandstein ochre-buff, weathered warm sandstone grey, authentic dark charcoal historic patina in crevices.\nAvoid: ABSOLUTELY NO WINDOWS, NO CARVED LETTERS OR INSCRIPTIONS, NO MOSS OVERGROWTH, NO PERSPECTIVE, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO BORDERS."
+    },
+    {
+      "key": "interior_marble",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": 1024,
+      "seamless_blend": false,
+      "usage": "Photorealistic seamless PBR luxury polished veined dark Nero Marquina marble floor tiles",
+      "materialHint": { "roughness": 1.0, "metalness": 0.05, "normalScale": 0.45, "envMapIntensity": 1.45 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic top-down close-up photograph of luxury European museum and high-end jeweler interior floor made of large square polished dark Nero Marquina black-charcoal marble tiles with delicate natural white and pale warm-gold calcite mineral veins, separated by razor-thin dark grey architectural grout lines in an even 4x4 square tile layout.\nStyle/medium: Real-world architectural material scan photograph, crisp crystal-clear natural mineral veining, zero painted artifacts.\nComposition/framing: Strictly perpendicular 90-degree top-down flat tile grid filling 100% of the square frame edge-to-edge, exact regular grid aligned with all four borders for seamless tiling.\nLighting/mood: Perfectly flat, even cross-polarized diffuse illumination with ZERO specular reflection hotspots, ZERO room reflections, ZERO shadows, ZERO vignette.\nColor palette: Deep obsidian charcoal-black marble, crisp fine ivory-white veins, subtle faint warm gold-taupe mineral streaks.\nAvoid: ABSOLUTELY NO REFLECTIONS OF LIGHTS OR CEILINGS, NO FOOTPRINTS, NO TEXT, NO PERSPECTIVE, NO VIGNETTE, NO BORDERS."
+    },
+    {
+      "key": "brushed_steel",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": 1024,
+      "seamless_blend": true,
+      "usage": "Photorealistic seamless PBR machined brushed stainless vault steel for safes, vault doors, and security panels",
+      "materialHint": { "roughness": 1.0, "metalness": 0.88, "normalScale": 0.55, "envMapIntensity": 1.35 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic straight-on close-up photograph of heavy industrial machined brushed stainless steel plate used for bank vaults and security doors. Fine crisp horizontal directional brushed grain striations, subtle industrial steel tonal mottling, ultra-fine micro-scratches from machining and handling.\nStyle/medium: Real-world industrial material scan photograph, sharp metallic grain micro-detail edge-to-edge.\nComposition/framing: Strictly perpendicular flat metal surface filling 100% of the square frame edge-to-edge, uniform horizontal brush orientation across the whole surface for seamless tiling.\nLighting/mood: Perfectly flat, even cross-polarized diffuse neutral illumination with ZERO bright specular hotspots, ZERO dark vignette, ZERO color cast, ZERO gradient.\nColor palette: Cool machined gunmetal-silver steel grey, subtle neutral titanium tonal variation.\nAvoid: ABSOLUTELY NO RIVETS, NO BOLTS, NO SEAMS, NO LOGOS, NO TEXT, NO RUST, NO PERSPECTIVE, NO SPECULAR GLARE, NO VIGNETTE, NO BORDERS."
+    },
+    {
+      "key": "brick_alley",
+      "gen_size": "1024x1024",
+      "quality": "high",
+      "target_size": 1024,
+      "seamless_blend": false,
+      "usage": "Photorealistic seamless PBR damp gritty Mediterranean service alley weathered brick masonry",
+      "materialHint": { "roughness": 1.0, "metalness": 0.0, "normalScale": 1.2, "envMapIntensity": 0.75 },
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D game engine\nSubject: Strictly flat orthographic straight-on close-up photograph of a gritty damp Mediterranean Spanish service-alley brick masonry wall. Weathered dark terracotta, muted rust-brown, and soot-stained clay bricks laid in regular horizontal running-bond courses with deeply recessed crumbly grey-ochre lime mortar joints, authentic damp mineral staining, subtle chipped brick corners, and coastal age grime.\nStyle/medium: Real-world architectural photogrammetry scan photograph, crisp porous clay brick texture and gritty sand mortar edge-to-edge.\nComposition/framing: Strictly perpendicular straight-on masonry wall filling 100% of the square frame edge-to-edge, uniform running-bond courses cleanly aligned with borders for seamless tiling.\nLighting/mood: Perfectly flat, even overcast diffuse illumination with ZERO directional shadows, ZERO vignette, ZERO gradient.\nColor palette: Damp dark terracotta clay, muted burnt umber brick, weathered charcoal-soot stains, gritty slate-grey mortar.\nAvoid: ABSOLUTELY NO GRAFFITI, NO PIPES, NO WIRES, NO POSTERS, NO TEXT, NO PERSPECTIVE, NO DIRECTIONAL SHADOWS, NO VIGNETTE, NO BORDERS."
+    }
+  ],
+  "environments": [
+    {
+      "key": "env_salou_night",
+      "manifest_key": "salou_night",
+      "out": "public/assets/textures/env_salou_night.webp",
+      "url": "/assets/textures/env_salou_night.webp",
+      "gen_size": "2048x1024",
+      "quality": "high",
+      "target_size": [2048, 1024],
+      "webp_quality": 86,
+      "usage": "Seamless 360-degree equirectangular photorealistic night IBL environment map for Salou Costa Daurada (PMREMGenerator)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: 360-degree by 180-degree equirectangular HDRI night sky and horizon environment map for 3D PBR image-based lighting\nScene/backdrop: True photographic full 360x180 spherical equirectangular panorama captured outdoors on the Mediterranean coastal boulevard of Salou in Catalonia at midnight. Upper hemisphere (top half): deep clear midnight indigo-navy sky with subtle coastal thin clouds, faint distant starlight, and soft warm urban amber atmospheric skyglow rising gently from the horizon. Exact horizontal equator band (middle): continuous distant 360-degree wrap-around Mediterranean coastal horizon featuring warm sodium-vapor streetlamp light points, soft amber and faint cyan-teal hotel window glow on one half and calm dark Balearic Sea night horizon with faint distant harbor lights on the other half, occasional dark palm silhouettes. Lower hemisphere (bottom half): dark wet midnight coastal asphalt and dark reflective Mediterranean water gently mirroring the warm amber and cool cyan horizon lights.\nStyle/medium: Authentic photorealistic 360-degree equirectangular environment panorama photography suitable for WebGL PMREM reflections on wet asphalt, metallic car clearcoat, and glass.\nComposition/framing: Strict 2:1 equirectangular spherical projection with perfectly level horizon running straight across the exact vertical midpoint (50% height), continuous horizon matching seamlessly at left and right edges, smooth uncluttered dark sky at zenith and dark ground at nadir.\nLighting/mood: Rich dynamic night contrast — bright warm sodium-amber and cool turquoise-cyan specular light pinpoints along the horizon against deep midnight blue sky and dark wet ground for crisp PBR reflections.\nAvoid: ABSOLUTELY NO FOREGROUND OBJECTS CLOSE TO CAMERA, NO PEOPLE, NO CARS, NO TEXT, NO LOGOS, NO WATERMARKS, NO BORDERS, NO SPLIT PANELS."
+    },
+    {
+      "key": "env_dresden_night",
+      "manifest_key": "dresden_night",
+      "out": "public/assets/textures/env_dresden_night.webp",
+      "url": "/assets/textures/env_dresden_night.webp",
+      "gen_size": "2048x1024",
+      "quality": "high",
+      "target_size": [2048, 1024],
+      "webp_quality": 86,
+      "usage": "Seamless 360-degree equirectangular photorealistic night IBL environment map for historic baroque Dresden (PMREMGenerator)",
+      "prompt": "Use case: photorealistic-natural\nAsset type: 360-degree by 180-degree equirectangular HDRI night sky and horizon environment map for 3D PBR image-based lighting\nScene/backdrop: True photographic full 360x180 spherical equirectangular panorama captured on the historic baroque terrace beside the Elbe river in Dresden, Germany at late twilight-midnight. Upper hemisphere (top half): deep Prussian midnight-blue central European night sky with soft low mist clouds catching subtle golden heritage city glow near the horizon. Exact horizontal equator band (middle): continuous distant 360-degree wrap-around panorama of historic baroque Dresden Elbsandstein domes, spires, palace facades, and arched bridges softly illuminated by warm golden architectural floodlights and warm tungsten streetlamps, with cool dark river haze between landmarks. Lower hemisphere (bottom half): dark damp baroque cobblestone terrace and dark midnight Elbe water shimmering with warm golden and pale blue reflections.\nStyle/medium: Authentic photorealistic 360-degree equirectangular environment panorama photography suitable for WebGL PMREM reflections on polished dark marble, gilded baroque brass, museum glass vitrines, and brushed steel vaults.\nComposition/framing: Strict 2:1 equirectangular spherical projection with perfectly level horizon running straight across the exact vertical midpoint (50% height), continuous horizon matching seamlessly at left and right edges, clean dark zenith sky and dark reflective ground at nadir.\nLighting/mood: Regal nocturnal European thriller atmosphere — crisp warm golden architectural floodlight highlights against deep cool Prussian-blue night sky for dramatic PBR specular reflections.\nAvoid: ABSOLUTELY NO FOREGROUND OBJECTS CLOSE TO CAMERA, NO PEOPLE, NO TEXT, NO LOGOS, NO WATERMARKS, NO BORDERS, NO SPLIT PANELS."
+    }
+  ],
+  "blender_materials": [
+    {
+      "key": "leather_dark",
       "gen_size": "1024x1024",
       "quality": "medium",
-      "target_size": [512, 512],
-      "webp_quality": 84,
-      "seamless": true,
-      "usage": "Seamless tileable UI/Reißbrett texture for architectural night blueprint drafting surface",
-      "prompt": "Use case: stylized-concept\nAsset type: seamless tileable UI background surface texture\nSubject: Flat orthographic top-down close-up of dark deep Prussian-indigo architectural blueprint drafting paper surface, rich fine cotton-fiber paper tooth, subtle aged cyanotype patina, whisper-faint delicate pale-cyan millimeter drafting grid lines evenly spaced across the whole surface, subtle wax-tracing paper tactile depth.\nStyle/medium: Refined tactile editorial paper and cyanotype drafting background texture for a sleek neo-noir heist planning blueprint interface.\nComposition/framing: Strictly flat straight-on orthographic paper surface filling 100% of the square frame edge-to-edge, uniform subtle grid aligned cleanly with frame edges for seamless tiling.\nLighting/mood: Perfectly flat, even diffuse lighting with zero vignette, zero folded crease shadows, zero spotlight gradients so it tiles seamlessly behind UI panels.\nColor palette: Deep Prussian blueprint indigo (#0d1b32), slate midnight navy (#132542), very faint desaturated cyan hairline grid patina.\nAvoid: ABSOLUTELY NO TEXT, NO NUMBERS, NO DRAWINGS, NO FLOORPLANS, NO RULERS, NO PENCILS, NO COFFEE STAINS, NO VIGNETTE, NO BORDERS."
+      "target_size": 1024,
+      "seamless_blend": true,
+      "usage": "Seamless photorealistic dark full-grain calfskin jacket leather texture for Blender character models",
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D character clothing\nSubject: Strictly flat orthographic macro close-up photograph of real worn dark charcoal-black full-grain leather from a sleek European motor jacket. Fine natural pebbled leather pore grain, subtle supple micro-creases, gentle matte-satin surface variation.\nStyle/medium: Real-world textile material scan photograph, crisp focus edge-to-edge.\nComposition/framing: Strictly perpendicular flat leather swatch filling 100% of square frame edge-to-edge for seamless tiling.\nLighting/mood: Perfectly flat cross-polarized diffuse illumination, zero glare, zero shadows, zero vignette.\nColor palette: Deep matte charcoal-espresso black leather.\nAvoid: ABSOLUTELY NO STITCHING SEAMS, NO ZIPPERS, NO LOGOS, NO TEXT, NO PERSPECTIVE, NO VIGNETTE, NO BORDERS."
+    },
+    {
+      "key": "tactical_fabric",
+      "gen_size": "1024x1024",
+      "quality": "medium",
+      "target_size": 1024,
+      "seamless_blend": false,
+      "usage": "Seamless photorealistic dark ripstop tactical nylon/cotton weave texture for Blender character gear",
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D character clothing\nSubject: Strictly flat orthographic macro close-up photograph of matte dark slate-navy ballistic ripstop nylon and cotton technical jacket fabric. Crisp fine orthogonal micro-grid ripstop weave threads, authentic matte textile fiber grain.\nStyle/medium: Real-world textile material scan photograph, ultra-sharp woven thread detail edge-to-edge.\nComposition/framing: Strictly perpendicular flat fabric swatch filling 100% of square frame edge-to-edge aligned evenly for seamless tiling.\nLighting/mood: Perfectly flat diffuse studio scan lighting, zero creases, zero shadows, zero vignette.\nColor palette: Matte dark tactical navy-slate charcoal.\nAvoid: ABSOLUTELY NO POCKETS, NO ZIPPERS, NO FOLDS, NO LOGOS, NO TEXT, NO VIGNETTE, NO BORDERS."
+    },
+    {
+      "key": "wool_tweed",
+      "gen_size": "1024x1024",
+      "quality": "medium",
+      "target_size": 1024,
+      "seamless_blend": false,
+      "usage": "Seamless photorealistic charcoal-olive herringbone wool tweed texture for Jupp's coat and flatcap",
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D character clothing\nSubject: Strictly flat orthographic macro close-up photograph of classic vintage European dark charcoal-brown and muted olive-grey herringbone wool tweed overcoat fabric. Crisp woven diagonal chevron twill yarns, natural wool flecks and coarse tactile fibers.\nStyle/medium: Real-world textile material scan photograph, razor-sharp woven yarn focus edge-to-edge.\nComposition/framing: Strictly perpendicular flat woven herringbone textile filling 100% of square frame edge-to-edge with uniform repeating vertical columns aligned cleanly for seamless tiling.\nLighting/mood: Perfectly flat diffuse scan illumination, zero folds, zero directional shadow, zero vignette.\nColor palette: Muted charcoal grey, warm dark olive-taupe wool flecks, espresso yarn threads.\nAvoid: ABSOLUTELY NO BUTTONS, NO SEAMS, NO FOLDS, NO LOGOS, NO TEXT, NO VIGNETTE, NO BORDERS."
+    },
+    {
+      "key": "palm_bark",
+      "gen_size": "1024x1024",
+      "quality": "medium",
+      "target_size": 1024,
+      "seamless_blend": true,
+      "usage": "Seamless photorealistic Mediterranean Canary Island palm tree trunk bark texture for Blender palms",
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D foliage trunks\nSubject: Strictly flat orthographic straight-on close-up photograph of weathered Mediterranean coastal date palm tree trunk bark (Phoenix canariensis). Authentic diamond-patterned cut frond leaf-base scars, rough fibrous brown-grey bark strands, sun-bleached crevices.\nStyle/medium: Real-world botanical photogrammetry scan photograph, crisp dry fibrous texture edge-to-edge.\nComposition/framing: Strictly flat unwrapped cylinder bark pattern filling 100% of square frame edge-to-edge, uniform horizontal rings for seamless cylindrical tiling.\nLighting/mood: Perfectly flat overcast diffuse illumination, zero directional shadows, zero vignette, zero gradient.\nColor palette: Weathered grey-brown bark, muted dusty umber fibers, dark charcoal bark recesses.\nAvoid: ABSOLUTELY NO SKY, NO LEAVES, NO ROUNDED TRUNK EDGES, NO PERSPECTIVE, NO VIGNETTE, NO TEXT, NO BORDERS."
+    },
+    {
+      "key": "wood_shutter",
+      "gen_size": "1024x1024",
+      "quality": "medium",
+      "target_size": 1024,
+      "seamless_blend": true,
+      "usage": "Seamless photorealistic weathered Mediterranean painted timber wood grain for Salou shutters and doors",
+      "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable photogrammetry PBR albedo texture map for 3D architectural wood\nSubject: Strictly flat orthographic straight-on close-up photograph of weathered coastal Mediterranean painted hardwood planks from vintage Catalan shutters and heavy doors. Rich dark walnut-teal and weathered deep cedar wood grain, subtle vertical timber fibers, fine natural coastal paint patina and micro-checking.\nStyle/medium: Real-world architectural photogrammetry wood scan photograph, crisp wood fiber detail edge-to-edge.\nComposition/framing: Strictly perpendicular flat wood planks filling 100% of square frame edge-to-edge with vertical wood grain aligned cleanly for seamless tiling.\nLighting/mood: Perfectly flat overcast diffuse illumination, zero glare, zero shadows, zero vignette.\nColor palette: Deep weathered coastal espresso-walnut wood with subtle faded Mediterranean olive-slate undertones.\nAvoid: ABSOLUTELY NO HINGES, NO HANDLES, NO NAILS, NO TEXT, NO PERSPECTIVE, NO VIGNETTE, NO BORDERS."
+    }
+  ],
+  "keep_textures": [
+    {
+      "key": "blueprint_paper",
+      "out": "public/assets/textures/blueprint_paper.webp",
+      "url": "/assets/textures/blueprint_paper.webp",
+      "tileable": true,
+      "usage": "Seamless tileable UI/Reißbrett texture for architectural night blueprint drafting surface"
     }
   ]
 }

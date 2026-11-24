@@ -46,13 +46,16 @@ export function CharacterAvatar({
       }}
     >
       {!failed ? (
-        <img
-          src={src}
-          alt={name}
-          onError={() => setFailed(true)}
-          className="w-full h-full object-cover object-top"
-          draggable={false}
-        />
+        <>
+          <img
+            src={src}
+            alt={name}
+            onError={() => setFailed(true)}
+            className="w-full h-full object-cover object-top contrast-[1.04] saturate-[0.96]"
+            draggable={false}
+          />
+          <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_16px_rgba(2,6,23,0.55)]" />
+        </>
       ) : (
         <div
           className="w-full h-full flex items-center justify-center font-display font-bold tracking-wider text-slate-100"
